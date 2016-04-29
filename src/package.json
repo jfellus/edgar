@@ -1,0 +1,28 @@
+{
+  "name": "edgar",
+  "version": "1.0.0",
+  "description": "The dataflow systems butler",
+  "main": "main.js",
+  "scripts": {
+    "package": "electron-packager . edgar --platform linux --arch x64 --out ../dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jfellus/edgar.git"
+  },
+  "keywords": [
+      "Dataflow",
+      "Autonomous System",
+      "Graphical Editor"
+  ],
+  "author": "jfellus",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/jfellus/edgar/issues"
+  },
+  "homepage": "https://github.com/jfellus/edgar#readme",
+  "devDependencies": {
+    "electron-prebuilt": "^0.37.0",
+    "electron-packager": "~7.0.1"
+  }
+}

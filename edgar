@@ -1,0 +1,3 @@
+#!/bin/sh
+
+./src/node_modules/.bin/electron ./src/main.js
