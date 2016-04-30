@@ -1,0 +1,21 @@
+{
+	"name": "edgar",
+	"version": "1.0.0",
+	"homepage": "https://github.com/jfellus/edgar",
+	"description": "The dataflow systems butler",
+	"authors": [
+		"Jerome Fellus <jfellus@gmail.com>"
+	],
+	"main": "index.html",
+	"license": "LGPL v3",
+	"ignore": [
+		"**/.*",
+		"node_modules",
+		"bower_components",
+		"test",
+		"tests"
+	],
+	"dependencies": {
+		"polymer": "Polymer/polymer"
+	}
+}

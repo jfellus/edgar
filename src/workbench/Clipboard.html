@@ -1,0 +1,85 @@
+<script>
+
+
+function Clipboard() {
+	this.selection = null;
+}
+
+Clipboard.prototype.cut = function(selection) {
+	if(!selection) return;
+	if(!Array.isArray(selection)) selection = [selection];
+	selection = selection.map(function(m) {return m.m ? m.m : m; });
+
+	selection.forEach(function(m) { if(m.component) m.component.remove(); });
+
+	this.selection = selection;
+}
+
+Clipboard.prototype.copy = function(selection) {
+	var that = this;
+	if(!selection) return;
+	if(!Array.isArray(selection)) selection = [selection];
+	selection = selection.map(function(m) {return m.m ? m.m : m;});
+
+	this.selection = [];
+	selection.forEach(function(m) {
+		var copy = new PGCC.Module(null);
+		m.copyTo(copy);
+		that.selection.push(copy);
+	});
+
+}
+
+Clipboard.prototype.paste = function(editor, pos) {
+	if(!editor || !this.selection) return;
+	var that = this;
+
+	function createUniqueId(m) {
+		var _pos = m.id.lastIndexOf("_");
+		if(_pos!==-1 && !isNaN(parseFloat(m.id.substr(_pos+1)))) m.id = m.id.substr(0,_pos);
+
+		var i=1;
+		while (
+			editor.script.hasModule(m.id + "_" + i) ||
+			that.selection.filter(function(m1){
+				return m1.id === m.id + "_" + i;
+			}).length
+		) i++;
+		return m.id + "_" + i;
+	}
+
+	// Make every module unique
+	this.selection.forEach(function(m) {
+		if(editor.script.hasModule(m.id)) m.id = createUniqueId(m);
+	});
+
+	// Position modules
+	if(pos && pos.x && pos.y) {
+		var n = this.selection.length;
+		var sum = this.selection.reduce(function(prev, m){
+			return {x:prev.x + parseFloat(m.params.x), y:prev.y + parseFloat(m.params.y)};
+		}, {x:0, y:0});
+		var center = {x:sum.x/n, y:sum.y/n};
+
+		this.selection.forEach(function(m) {
+			m.set('x', parseFloat(m.params.x) - center.x + pos.x);
+			m.set('y', parseFloat(m.params.y) - center.y + pos.y);
+		});
+	}
+
+	this.selection.forEach(function(m) {
+		editor.script.addModule(m);
+		editor.addModule(m);
+	});
+
+	var pasted = this.selection;
+	this.copy(pasted);
+	return pasted;
+}
+
+
+var CLIPBOARD = new Clipboard();
+
+
+
+</script>

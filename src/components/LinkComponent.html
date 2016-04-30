@@ -1,0 +1,108 @@
+<script src="../bower_components/d3/d3.min.js"></script>
+<script>
+
+
+function LinkComponent(editor, l) {
+	var that = this;
+	this.link = l;
+	this.editor = editor;
+	this.bAttached = true;
+
+	l.component = this;
+
+	this.component = this._createComponent();
+	this.component.node().addEventListener("click", function(e) {
+		editor.select(l); e.stopPropagation();
+	});
+
+	l.on('change', function(evt) {
+		var key = evt.key;
+		var value = evt.value;
+		if(key === "src") that.onSetSrc(value);
+		else if(key === "dst") that.onSetDst(value);
+		else if(key === "srcPin" || key === "dstPin") that.update();
+		editor.notifyModify();
+	});
+
+	this.onSetSrc(this.link.src);
+	this.onSetDst(this.link.dst);
+}
+util.inherits(LinkComponent, EventEmitter);
+
+LinkComponent.prototype.update = function() {
+	this.component.attr("d", this._createPath());
+}
+
+
+LinkComponent.prototype.onSetSrc = function(src) {
+	var that = this;
+
+	if(this.srcComponent) {
+		this.srcComponent.off("move", this.update.bind(this));
+	}
+
+	this.srcComponent = this.link.src ? this.link.src.component : null;
+	if(this.srcComponent) this.srcComponent.on("move", this.update.bind(this));
+}
+
+LinkComponent.prototype.onSetDst = function(dst) {
+	var that = this;
+
+	if(this.dstComponent) {
+		this.dstComponent.off("move", this.update.bind(this));
+	}
+
+	this.dstComponent = this.link.dst ? this.link.dst.component : null;
+	if(this.dstComponent) this.dstComponent.on("move", this.update.bind(this));
+}
+
+
+LinkComponent.prototype.getSrcPoint = function() {
+	var l = this.link;
+	var ptSrc = l.src;
+	var srcPin = this.link.get("srcPin");
+	if(srcPin && ptSrc.pinCoords[srcPin]) ptSrc = ptSrc.pinCoords[srcPin];
+	if(!ptSrc || !ptSrc.x || !ptSrc.y) return null;
+	return [ptSrc.x, ptSrc.y];
+}
+
+LinkComponent.prototype.getDstPoint = function() {
+	var l = this.link;
+	var ptDst = l.dst;
+	var dstPin = this.link.get("dstPin");
+	if(dstPin && ptDst.pinCoords[dstPin]) ptDst = ptDst.pinCoords[dstPin];
+	if(!ptDst || !ptDst.x || !ptDst.y) return null;
+	return [ptDst.x, ptDst.y];
+}
+
+LinkComponent.prototype._createPath = function() {
+	//	return "M"+[x1,y1]+" C"+[x2,y1,x1,y2,x2,y2];
+		return "M"+this.getSrcPoint()+ "L"+this.getDstPoint();
+}
+
+LinkComponent.prototype._createComponent = function() {
+	return this.editor.gLinks.append("path").attr("d", this._createPath());
+}
+
+LinkComponent.prototype.setSelected = function(bSelected) {
+	this.component.classed("selected", bSelected);
+}
+
+LinkComponent.prototype.remove = function() {
+	if(!this.bAttached) return;
+	this.bAttached = false;
+	this.link.delete();
+	$(this.component.node()).detach();
+	this.editor.notifyModify();
+}
+
+LinkComponent.prototype.reattach = function() {
+	if(this.bAttached) return;
+	this.bAttached = true;
+	this.link.reattach();
+	$(this.editor.gLinks.node()).append($(this.component.node()));
+	this.editor.notifyModify();
+}
+
+
+</script>

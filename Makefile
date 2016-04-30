@@ -2,6 +2,10 @@ default: all
 
 all:
 	cd src; npm install
+	cd src; bower install
+	rm -f ./src/node_modules/pgcc
+	ln -sf `pwd`/../pgcc ./src/node_modules/pgcc
+
 
 package:
 	rm -rf dist/edgar

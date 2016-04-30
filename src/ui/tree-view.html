@@ -1,0 +1,110 @@
+<dom-module id="tree-item">
+<style>
+:host {
+	display:block;
+	color:#333333; padding:0; margin:0; width:100%;
+}
+
+#details {
+	display:none; padding:0; margin:0;
+	padding-left:20px;
+	padding-bottom:20px;
+	width:100%;
+}
+
+li > div {
+	text-decoration: none;
+	margin:0; padding:2px;
+	display:flex; flex-direction: row;
+	justify-content: flex-start; align-items: center;
+	width:100%;
+	cursor:hand;
+}
+li:hover > div { background:#eeeeff; }
+#details li:hover > div { text-decoration: underline; color:black; }
+img { padding: 4px;}
+ul {
+	padding:0; margin:0; list-style-type: none;
+	width:100%; box-sizing: border-box;
+}
+</style>
+<template>
+	<li><div on-click="onClick">
+		<template is="dom-if" if="{{icon}}">
+			<img src$='{{computeIcon(icon)}}'>
+		</template>{{name}}</div>
+		<ul id="details">
+			<template is="dom-repeat" items={{items}}>
+				<template is="dom-if" if={{item.items}}>
+					<tree-item name="{{item.name}}" items="{{item.items}}" icon="{{item.icon}}">
+					</tree-item>
+				</template>
+				<template is="dom-if" if={{!item.items}}>
+					<li>
+						<div>
+						<template is="dom-if" if="{{item.icon}}">
+							<img src$='{{computeIcon(item.icon)}}'>
+						</template>{{item.name}}</img></div>
+					</li>
+				</template>
+			</template>
+		</ul>
+	</li>
+</template>
+</dom-module>
+<script>
+
+Polymer({
+	is: 'tree-item',
+	properties: {
+		name: { notify:true, value:"" },
+		items: { notify:true, value:null }
+	},
+
+	attached: function() {
+
+	},
+
+	onClick: function(evt) {
+		$(this.$.details).slideToggle(200);
+		this.toggleClass("open");
+	},
+
+	computeIcon: function(icon) {
+		return "./resources/icons/"+ icon;
+	}
+
+});
+
+
+</script>
+
+
+<dom-module id="tree-view">
+<style>
+	ul { margin:0; padding:0; list-style-type: none; }
+</style>
+<template>
+	<ul>
+		<template is="dom-repeat" items="{{items}}">
+			<tree-item name="{{item.name}}" items="{{item.items}}" icon="{{item.icon}}"></tree-item>
+		</template>
+	</ul>
+</template>
+</dom-module>
+<script>
+
+Polymer({
+	is: 'tree-view',
+	properties: {
+		items: { notify:true, value:[]}
+	},
+
+	attached: function () {
+
+	}
+
+});
+
+
+</script>

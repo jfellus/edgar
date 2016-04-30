@@ -1,0 +1,479 @@
+<script>
+	const EventEmitter = require('events').EventEmitter;
+	const util = require('util');
+	const d3 = require('d3');
+</script>
+
+<link rel="import" href="../components/ModuleComponent.html">
+<link rel="import" href="../components/LinkComponent.html">
+<link rel="import" href="../components/ModuleCreator.html">
+<link rel="import" href="../components/LinkCreator.html">
+<link rel="import" href="../components/LinkCreator.html">
+<link rel="import" href="../workbench/Clipboard.html">
+<link rel="import" href="../workbench/History.html">
+
+
+<dom-module id="view-editor">
+<style>
+	svg {
+		width:100%; height:100%; box-sizing: border-box;
+	}
+
+	svg /deep/ rect.selection {
+		z-index:10000;
+		stroke-width:1;
+		stroke:#0000FF;
+		fill:#DDDDFF;
+		vector-effect:non-scaling-stroke;
+		opacity:0.3;
+		visibility: hidden;
+	}
+
+	svg /deep/ rect.module {
+		z-index:10;
+		stroke-width:1;
+		stroke:#666666;
+		fill:#DDDDDD;
+	}
+
+	svg /deep/ text.module {
+		font-size:11px;
+	}
+
+	svg /deep/ rect.pin {
+		stroke:none;
+		fill:black;
+	}
+	svg /deep/ text.pin {
+		font-size:10px;
+	}
+
+	svg /deep/ path {
+		stroke-width:2;
+		stroke:black;
+		z-index:-11;
+		fill:none;
+		cursor:hand;
+		marker-end:url(#end-mark);
+	}
+	svg /deep/ path:hover {
+		stroke-width:5;
+	}
+
+	svg /deep/ .selected rect.module,
+	svg /deep/ path.selected {
+		stroke-width:6;
+		stroke:red;
+	}
+
+	marker#end-mark path { fill:black; }
+
+	#loading { position:absolute; top:0; left:0; bottom:0; right:0; background:#dddddd; color:#777777; font-size:20px; font-weight:bold; display:flex; justify-content: center; align-items: center; }
+
+</style>
+<template>
+	<div id="loading">Loading ...</div>
+	<svg id="svg">
+		<defs>
+			<marker id="end-mark" viewBox="-100 -100 200 200"  markerWidth="8" markerHeight="8" orient='auto'>
+	 			 <--><path class='marker-path' d='M0,50 L100,0 L0,-50 Z'/>
+   			</marker>
+		</defs>
+		<g id="world">
+			<g id="gLinks"></g>
+			<g id="gModules"></g>
+		</g>
+	</svg>
+</template>
+</dom-module>
+<script>
+
+
+var PGCC = require("pgcc");
+
+var LAST_NEW_DOC = 0;
+
+
+Polymer({
+	is: 'view-editor',
+	properties: {
+		selection: {notify:true, value:null},
+		modified: {notify:true, observer:"onModifiedChanged"},
+		filename: {notify:true}
+	},
+	observers: {
+		'loaded': 'onLoaded'
+	},
+
+	attached: function() {
+		var that = this;
+		var _zooming = false;
+
+
+		// Setup mouse navigation
+		this.zoomBehavior = d3.behavior.zoom().scaleExtent([0.04,200])
+		.on('zoomstart', function(){})
+		.on('zoom', function (){
+			d3.select(that.$.world).attr('transform', 'translate(' + d3.event.translate + '),scale(' + d3.event.scale + ')');
+		})
+		.on('zoomend', function(){});
+		d3.select(this.$.svg).call(this.zoomBehavior);
+
+		// Pan view only with middle mouse button
+		var fn_mousemove = d3.select(this.$.svg).on("mousedown.zoom");
+		d3.select(this.$.svg).on("mousedown.zoom", function(){
+			if(d3.event.which === 2) return fn_mousemove.apply(this, arguments);
+		});
+
+		$(this.$.svg).on("mousedown", function(evt){that.onMousedown(evt);});
+		$(this.$.svg).on("mouseup", function(evt){that.onMouseup(evt);});
+
+		$(this.$.svg).on("mousemove", function(evt){
+			if(that.creator && that.creator.onMousemove(evt)) return;
+			that.onMousemove(evt);
+		});
+
+		this.$.svg.addEventListener("click", function(evt) {
+			if(evt.which !== 1 || that._preventClick) return that._preventClick = false;
+			if(that.creator && that.creator.onClick(evt)) return;
+			that.onClick(evt);
+		});
+
+		this.world = d3.select(this.$.world);
+		this.gModules = d3.select(this.$.gModules);
+		this.gLinks = d3.select(this.$.gLinks);
+
+		this.selectionBox = this.world.append("rect").classed("selection", true);
+
+
+		if(this.filename) this.async(function() {this.open(this.filename); });
+		else this.async(function() {this.newDocument();})
+
+		this.history = new History();
+	},
+
+
+	//////////////
+	// COMMANDS //
+	//////////////
+
+	newDocument: function() {
+		this.filename = "NewScript_"+(LAST_NEW_DOC++)+".script";
+		this.fire("label", this.filename);
+		this.script = new PGCC.Script();
+		this.onLoaded();
+		this.modified = true;
+	},
+
+	open: function(filename) {
+		var that = this;
+		this.filename = filename;
+		this.script = new PGCC.Script(filename);
+		if(!this.script) throw "Script can't be loaded " + filename;
+
+		this.script.on("loaded", function() {
+			that.script.modules.forEach(function(m) { that.addModule(m); });
+			that.script.links.forEach(function(l) {	that.addLink(l); });
+			setTimeout(function() {that.onLoaded();},10);
+		});
+
+	},
+
+	close: function() {
+		var that = this;
+		if(!this.modified) return this.fire("close");
+		if(confirm(this.filename + " has been modified. Save changes ?")) {
+			this.save();
+			setTimeout(function(){that.fire("close");}, 40);
+		}
+	},
+
+	save: function() { return this.saveAs(this.filename); },
+
+	saveAs: function(filename) {
+		var that = this;
+		ZOB = this.script;
+		return this.script.write(filename).then(function() {
+			that.filename = filename;
+			that.fire("label", this.filename);
+			that.modified = false;
+		}).catch(function(e) { alert(e);});
+	},
+
+
+
+	///////////////
+	// SELECTION //
+	///////////////
+
+	select: function(o, bAdd) {
+		var that = this;
+		if(this.selection) this.selection.forEach(function(m) { if(m.component) m.component.setSelected(false); });
+		if(!this.selection) this.selection = [];
+
+		if(!Array.isArray(o)) o = [o];
+		if(bAdd) {
+			o.forEach(function(m) {
+				var i = that.selection.indexOf(m);
+				if(i===-1) that.selection.push(m);
+				else that.selection.splice(i,1);
+			});
+			that.selection = that.selection.slice();
+		}
+		else this.selection = o;
+
+		this.selection.forEach(function(m) {if(m.component) m.component.setSelected(true); });
+
+		if(!this.selection.length) this.selection = null;
+		WORKBENCH.selection = this.selection;
+	},
+
+	unselect: function() {
+		if(this.selection) this.selection.forEach(function(m) { if(m.component) m.component.setSelected(false); });
+		this.selection = null;
+
+		WORKBENCH.selection = this.selection;
+	},
+
+	selectRect: function(rect, bAdd) {
+		if(this.selection) this.selection.forEach(function(m) { if(m.component) m.component.setSelected(false); });
+		var sel = this.script.modules.filter(function(m) {
+			if(!m.component) return false;
+			return m.component.isInRect(rect);
+		});
+		if(sel.length) this.select(sel, bAdd);
+		else if(!bAdd) this.unselect();
+	},
+
+	/////////////
+	// EDITION //
+	/////////////
+
+	addModule: function(m) {
+		m.component = new ModuleComponent(this, m);
+	},
+
+	addLink: function(l) {
+		l.component = new LinkComponent(this, l);
+	},
+
+	delete: function() {
+		if(!this.selection) return;
+		this.selection.forEach(function(m) { if(m.component) m.component.remove(); });
+		this.addHistory(new CommandDelete(this, this.selection));
+		this.unselect();
+		this.notifyModify();
+	},
+
+	connect: function(src, dst, srcPin, dstPin) {
+		if(!this.script) return;
+		var that = this;
+		if(typeof(src) === 'string' && src.indexOf(".")!==-1) { srcPin = src.split(".")[1]; src = src.split(".")[0];  }
+		if(typeof(dst) === 'string' && dst.indexOf(".")!==-1) { dstPin = dst.split(".")[1]; dst = dst.split(".")[0];  }
+		if(typeof(src) === 'string') src = this.script.getModule(src);
+		if(typeof(dst) === 'string') dst = this.script.getModule(dst);
+		if(!src || !dst) throw "No such modules (" + src + " -> " + dst + ")";
+
+		this.addLink(new Link(src, dst, srcPin, dstPin));
+		this.notifyModify();
+	},
+
+	moveSelection: function(dx,dy) {
+		if(!this.selection) return;
+		this.selection.forEach(function(m) {
+			if(!m.x) m.x = parseFloat(m.params.x);
+			if(!m.y) m.y = parseFloat(m.params.y);
+			m.set("x", m.x + dx);
+			m.set("y", m.y + dy);
+		});
+	},
+
+	moveLeft: function() { this.move(-20,0);},
+	moveRight: function() { this.move(20,0);},
+	moveUp: function() { this.move(0,-20);},
+	moveDown: function() { this.move(0,20);},
+
+	move: function(dx, dy) {
+		if(!this.selection) return;
+		var oldpos = this.selection.map(function(m) { return {x:m.x, y:m.y}; });
+		this.moveSelection(dx * this.getZoom(), dy * this.getZoom());
+		this.addHistory(new CommandSet(this, this.selection, oldpos));
+	},
+
+
+	///////////////
+	// UNDO/REDO //
+	///////////////
+
+	undo: function() { this.history.undo(); },
+	redo: function() { this.history.redo(); },
+
+	addHistory: function(cmd) { this.history.add(cmd); },
+
+
+	//////////////
+	// CREATORS //
+	//////////////
+
+	createModule: function(hint) {
+		if(!this.script) return;
+		if(this.creator) this.creator.cancel();
+
+		var m = new PGCC.Module(this.script);
+		m.class = hint.class;
+		m.id = hint.class + "0";
+		if(hint.id) m.id = hint.id;
+
+		this.creator = new ModuleCreator(this, m);
+	},
+
+	createLink: function(hint) {
+		if(!this.script) return;
+		if(this.creator) this.creator.cancel();
+
+		var l = new PGCC.Link(this.script, null, null);
+		this.creator = new LinkCreator(this, l);
+	},
+
+
+	///////////////
+	// CLIPBOARD //
+	///////////////
+
+	cut: function() {
+		if(!this.selection) return;
+		CLIPBOARD.cut(this.selection);
+		this.addHistory(new CommandCut(this, this.selection));
+		this.unselect();
+		this.notifyModify();
+	},
+
+	copy: function() {
+		if(!this.selection) return;
+		CLIPBOARD.copy(this.selection);
+	},
+
+	paste: function() {
+		var pasted = CLIPBOARD.paste(this, this.mousePosWorld);
+		this.select(pasted);
+		this.addHistory(new CommandPaste(this, pasted));
+		this.notifyModify();
+	},
+
+
+	////////////
+	// EVENTS //
+	////////////
+
+	onMousemove: function(evt) {
+		this.mousePos = {x:evt.offsetX, y:evt.offsetY};
+		this.mousePosWorld = this.clientToWorld(this.mousePos);
+		if(this.drag) this.onDrag(evt);
+	},
+
+	onMousedown: function(evt) {
+		if(evt.which === 1) {
+			this.drag = { target: evt.target };
+			if(this.drag.target === this.$.svg) {
+				var pt = this.clientToWorld({x:evt.offsetX, y:evt.offsetY});
+				this.selectionBox.attr("x1", pt.x).attr("y1", pt.y);
+			}
+		}
+	},
+
+	onMouseup: function(evt) {
+		this.drag = null;
+		if(this.bMultipleSelection) {
+			this.bMultipleSelection = false;
+			this.selectionBox.style({visibility:"hidden"});
+			this.selectRect(svg_rect_get(this.selectionBox), evt.shiftKey);
+			this._preventClick = true;
+		}
+	},
+
+	onDrag: function(evt) {
+		if(this.drag.target === this.$.svg) {
+			this.bMultipleSelection = true;
+			var sb = this.selectionBox;
+			var pt = this.clientToWorld({x:evt.offsetX, y:evt.offsetY});
+			sb.attr("x2", pt.x).attr("y2", pt.y);
+			svg_rect_set_coords(sb, parseFloat(sb.attr("x1")),parseFloat(sb.attr("y1")),pt.x,pt.y);
+			sb.style({visibility:"visible"});
+		}
+	},
+
+	onClick: function(evt) {
+		if(!evt.shiftKey) this.unselect();
+	},
+
+	onKeydown: function(evt) {
+		console.log(evt.which);
+	},
+
+	notifyModify: function() {
+		this.modified = true;
+		WORKBENCH.fire("modify");
+	},
+
+	onModifiedChanged: function() {
+		if(this.modified) this.fire("label", this.filename + "*");
+		else this.fire("label", this.filename || "null");
+	},
+
+	onLoaded: function() {
+		this.modified = false;
+		$(this.$.loading).fadeOut();
+		this.HISTORY = new History();
+	},
+
+	onFocus: function() {
+		WORKBENCH.curEditor = this;
+	},
+
+	////////////////
+	// NAVIGATION //
+	////////////////
+
+	clientToWorld: function(pt) {
+		var tr = d3.transform(this.world.attr("transform"));
+		var x = (pt.x - tr.translate[0]) / tr.scale[0];
+		var y = (pt.y - tr.translate[1]) / tr.scale[1] ;
+		return {x:x,y:y};
+	},
+
+	getZoom: function() { return d3.transform(this.world.attr("transform")).scale[0]; },
+
+	panLeft: function() { this.pan(20,0);},
+	panRight: function() { this.pan(-20,0); },
+	panUp: function() { this.pan(0,20); },
+	panDown: function() { this.pan(0,-20); },
+
+	pan: function(dx,dy) {
+		var tr = this.zoomBehavior.translate();
+		this.zoomBehavior.translate([tr[0]+dx, tr[1]+dy]);
+		this.zoomBehavior.event(d3.select(this.$.svg));
+	}
+
+
+});
+
+
+
+
+///////////
+// UTILS //
+///////////
+
+function svg_rect_set_coords(rect, x1, y1, x2, y2) {
+	if(x1 < x2) { rect.attr("x", x1); rect.attr("width", x2-x1); }
+	else {	rect.attr("x", x2); rect.attr("width", x1-x2); }
+	if(y1 < y2) {	rect.attr("y", y1); rect.attr("height", y2-y1); }
+	else {	rect.attr("y", y2); rect.attr("height", y1-y2); }
+}
+
+function svg_rect_get(r) {
+	return {x:parseFloat(r.attr("x")), y:parseFloat(r.attr("y")), w:parseFloat(r.attr("width")), h:parseFloat(r.attr("height"))};
+}
+
+
+</script>

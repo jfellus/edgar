@@ -1,0 +1,31 @@
+<script src="../bower_components/d3/d3.min.js"></script>
+<script>
+
+function ModuleCreator(editor, m) {
+	ModuleComponent.call(this, editor, m);
+	var that = this;
+	this.editor = editor;
+}
+util.inherits(ModuleCreator, ModuleComponent);
+
+ModuleCreator.prototype.onMousemove = function(e) {
+	var p = this.editor.clientToWorld({x:e.offsetX,y:e.offsetY});
+	this.m.set("x", p.x);
+	this.m.set("y", p.y);
+}
+
+ModuleCreator.prototype.onClick = function() {
+	this.create();
+}
+
+ModuleCreator.prototype.create = function() {
+	if(this.editor.creator === this)  this.editor.creator = null;
+	this.editor.addHistory(new CommandCreate(this.editor, this.m));
+}
+
+ModuleCreator.prototype.cancel = function() {
+	this.component.remove();
+	if(this.editor.creator === this) this.editor.creator = null;
+}
+
+</script>

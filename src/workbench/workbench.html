@@ -1,13 +1,88 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Edgar</title>
-  </head>
-  <body>
-    <h1>Hello World!</h1>
-    We are using node <script>document.write(process.versions.node)</script>,
-    Chromium <script>document.write(process.versions.chrome)</script>,
-    and Electron <script>document.write(process.versions.electron)</script>.
-  </body>
-</html>
+<link rel="import" href="../index.html">
+<link rel="import" href="../ui/h-divider.html">
+<link rel="import" href="../ui/v-divider.html">
+<link rel="import" href="../ui/tabbed-pane.html">
+
+<dom-module id="edgar-workbench">
+<style>
+
+:host {
+	-webkit-user-select: none; /* Chrome/Safari */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+ */
+	-o-user-select: none;
+	user-select: none;
+	position:fixed; top:0; bottom:0; left:0; right:0; display:flex; flex-direction:column; align-items: stretch; width:100%; height:100%;}
+
+table {  position:fixed; top:0; bottom:0; left:0; right:0; padding:0; margin:0; border:0; border-collapse: collapse; width:100%; height:100%; }
+
+menu-bar { visibility:hidden; position:fixed; height:0; width:0;}
+tool-bar {
+	-webkit-user-select: none; /* Chrome/Safari */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+ */
+	-o-user-select: none;
+	user-select: none;
+	background:#f1f1f1; color:#333333;
+	display:flex; width:100%; padding:3px; align-content: center; align-items: center;
+	border-bottom:1px solid #dddddd;
+	border-top:1px solid #ededed;
+	box-shadow: 0px 0px 2px rgba(0,0,0,0.1);
+}
+tool-bar > item {position:relative; top:0; border-radius:3px; display:flex; background:#f1f1f1; padding:3px; margin:0px 3px; box-sizing:border-box; border:1px solid transparent; cursor:hand; height:40px; align-content:center; align-items: center; justify-content: center;}
+tool-bar > item:hover { box-shadow:2px 2px 2px #cccccc; border:1px solid #aaaaaa; }
+tool-bar > separator { position:relative; top:0; width:1px; border-left: 1px solid #cacaca; margin:4px; display:inline-block; height:20px; }
+tool-bar img { display:inline-block; height:100%; width:auto;}
+
+div.v { display:flex;flex-direction:column; align-items: stretch; align-content: stretch; justify-content: stretch;}
+div.h { display:flex;flex-direction:row; align-items: stretch; align-content: stretch; justify-content: stretch;}
+
+</style>
+<template>
+	<table border=0 cellpadding=0 cellspacing=0><tr><td style="padding:1px;">
+		<tool-bar id="toolbar">
+			<item key="ctrl+N">New</item>
+			<item key="ctrl+O">Open</item>
+			<item key="ctrl+S">Save</item>
+			<item key="ctrl+shift+S">SaveAs</item>
+			<item key="ctrl+W">Close</item>
+			<separator></separator>
+			<item key="ctrl+Z">Undo</item>
+			<item key="ctrl+shift+Z">Redo</item>
+			<item key="ctrl+X">Cut</item>
+			<item key="ctrl+C">Copy</item>
+			<item key="ctrl+V">Paste</item>
+			<separator></separator>
+			<item key="M">CreateModule</item>
+			<item key="L">CreateLink</item>
+			<item key="suppr">Delete</item>
+			<separator></separator>
+			<item key="ctrl+F">Search</item>
+			<separator></separator>
+			<item key="ctrl+B">Compile</item>
+			<item key="ctrl+space">Start</item>
+			<item>Stop</item>
+		</tool-bar>
+	</td></tr>
+
+	<tr><td height=100%>
+		<h-divider align="left" divider="40%">
+			<div class="left"><tabbed-pane id="left"></tabbed-pane></div>
+			<v-divider class="right">
+				<h-divider align="right" class="top" divider="1000%">
+					<div class="left"><tabbed-pane id="center"></tabbed-pane></div>
+					<div class="right"><tabbed-pane id="right"></tabbed-pane></div>
+				</h-divider>
+				<div class="bottom"><tabbed-pane id="bottom"></tabbed-pane></div>
+			</v-divider>
+		</h-divider>
+	</td></tr>
+	<tr><td>
+		<div id="status">{{status}}</div>
+	</td></tr>
+</table>
+</template>
+</dom-module>
+
+<script src="commands.js"></script>
+<script src="workbench.js"></script>

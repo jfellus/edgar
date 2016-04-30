@@ -1,0 +1,150 @@
+<link rel="import" href="../workbench/History.html">
+
+
+
+<dom-module id="view-properties">
+<style>
+	:host { position:absolute; left:0; right:0; top:0; bottom:0; }
+	table { width:100%; height:auto; padding:0; margin:0;}
+	td {border-bottom:1px solid #dddddd;}
+	td:first-child, input { padding: 3px 5px; }
+	td:first-child { font-weight:bold; background:#eeeeee; width:0px; }
+	div { display:flex; align-items: center; align-content: center; justify-content: center; width:100%; height:100%; background:#eeeeee; color:#999999; white-space: nowrap;}
+	input { width:100%; height:100%; border:none; }
+</style>
+<template>
+	<template is="dom-if" if='{{bNothingSelected}}'>
+		<div>No selection</div>
+	</template>
+	<template is="dom-if" if='{{bMultipleSelection}}'>
+		<div>{{nbSelected}} modules selected</div>
+	</template>
+	<template is="dom-if" if='{{!bMultipleSelection}}'>
+		<table cellspacing=0 cellpadding=0 border=0>
+			<template id='list' is="dom-repeat" items='{{params}}'>
+				<tr><td width="1%">{{item.key}}</td><td width='100%'>
+					<input type="text" on-focus="onInputFocus" on-keydown="keydown" on-keypress="keypress" value="{{item.value}}"></input>
+				</td></tr>
+			</template>
+		</table>
+	</template>
+</template>
+</dom-module>
+<script>
+
+
+Polymer({
+	is: 'view-properties',
+	properties: {
+		selection:{notify:true,value:null, observer:'onSelectionChanged'},
+		params:{notify:true}
+	},
+
+	attached: function() {
+		var that = this;
+		WORKBENCH.addEventListener("selection", function(evt) {that.set('selection', evt.detail.selection);});
+		WORKBENCH.addEventListener("modify", function(evt) {that.update();});
+	},
+
+
+	getProperties: function(selection) {
+		try {
+			var params = selection.params;
+			if(!params) params = selection;
+			var p = [];
+			for(var i in params) p.push({key:i, value:params[i]});
+			return p;
+		} catch(e) { return [];}
+	},
+
+	onInputFocus:function(e) {
+		this.editedField = e.target;
+		e.target.setAttribute("last-value", $(e.target).val());
+	},
+
+	keydown: function(e) {
+		var that = this;
+		if(!this.editedField) return e.preventDefault();
+
+		function increment(amount) {
+			e.preventDefault();
+			var v = parseFloat($(e.target).val());
+			if(""+v === $(e.target).val()) v += amount;
+			$(e.target).val(v);
+			that.onSetValue(e.srcElement);
+		}
+
+		if(e.keyIdentifier === "Escape" || e.which===27) {
+			$(e.target).val(e.target.getAttribute("last-value"));
+			e.preventDefault();
+			e.target.blur();
+			this.editedField = null;
+		}
+		else if(e.keyIdentifier === "Up") increment(1.0);
+		else if(e.keyIdentifier === "Down") increment(-1.0);
+	},
+
+	keypress: function(e) {
+		if(e.keyIdentifier === "Enter") {
+			e.preventDefault();
+			this.onSetValue(e.srcElement);
+			e.target.blur();
+			this.editedField = null;
+		}
+	},
+
+
+	onSetValue: function(elt) {
+		var k = $(elt).parent().prev().text();
+		var v = $(elt).val();
+		if(!this.validate(k,v)) {
+			$(elt).val($(elt).attr("last-value"));
+		} else {
+			var old = {}; old[k] = this.selection[0].get(k);
+			this.selection[0].set(k,v);
+			if(WORKBENCH.curEditor) {
+				WORKBENCH.curEditor.addHistory(new CommandSet(WORKBENCH.curEditor, this.selection, old));
+				WORKBENCH.curEditor.focus();
+			}
+		}
+	},
+
+	validate: function(property, value) {
+		return true;
+	},
+
+	onSelectionChanged: function() {
+		if(this.editedField) $(this.editedField).blur();
+		this.editedField = null;
+		this.update();
+	},
+
+	update: function() {
+		var that = this;
+		if(this.updating) return;
+		this.updating = true;
+		this.bNothingSelected = this.bMultipleSelection = false;
+
+		if(!that.selection || !that.selection.length) {
+			that.set("params", []);
+			this.bNothingSelected = true;
+			this.updating = false;
+		} else if(that.selection.length>1) {
+			that.set("params", []);
+			this.bMultipleSelection = true;
+			this.nbSelected = that.selection.length;
+			this.updating = false;
+		} else setTimeout(function() {
+			that.set("params", []);
+			if(!that.selection) return that.update();
+			that.set("params", that.getProperties(that.selection[0]));
+			that.updating = false;
+		}, 50);
+	}
+
+
+
+});
+
+
+</script>

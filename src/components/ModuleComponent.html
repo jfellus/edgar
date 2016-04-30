@@ -1,0 +1,212 @@
+<script src="../bower_components/d3/d3.min.js"></script>
+<script>
+
+
+
+
+function ModuleComponent(editor, m) {
+	var that = this;
+	this.editor = editor;
+	this.m = m;
+	this.bAttached = true;
+
+
+	/////////////// FAKE ////////////////////////:
+		m.pins = [
+				{ name:"VCC", side:"left" },
+				{ name:"Vin", side:"left"},
+				{ name:"OV", side:"left"},
+				{ name:"learn", side:"top"},
+				{ name:"RX", side:'right'},
+				{ name:"TX", side:"right"}
+			];
+/////////////////////////////////
+
+
+	m.component = this;
+	m.pinCoords = {};
+
+	if(!m.x) m.x = parseFloat(m.params.x);
+	if(!m.y) m.y = parseFloat(m.params.y);
+	if(!m.x) m.params.x = m.x = Math.random()*1000;
+	if(!m.y) m.params.y = m.y = Math.random()*700;
+
+	this.component = this._createComponent(m);
+
+	m.on('change', function(evt) {
+		var key = evt.key;
+		var value = evt.value;
+		if(key === "x") that.move(m.params.x, m.params.y);
+		else if(key === "y") that.move(m.params.x, m.params.y);
+		editor.notifyModify();
+	});
+
+
+	var dragBehavior = d3.behavior.drag()
+	  .on("dragstart", function() { that._oldPos = {x:m.x, y:m.y};
+			if(!editor.selection || editor.selection.indexOf(m)===-1) editor.select(m);
+			that._oldPos = editor.selection.map(function(mm) { return {x:mm.x, y:mm.y}; });
+  		})
+	  .on("dragend", function() { editor.addHistory(new CommandSet(editor, editor.selection, that._oldPos)); })
+	  .on("drag", function() {
+			if(d3.event.sourceEvent.which !== 1 || d3.event.sourceEvent.shiftKey) return;
+			editor.moveSelection(d3.event.dx, d3.event.dy);
+			that._preventClick = true;
+	  });
+	this.component.call(dragBehavior);
+
+
+
+	if(m.pins) {
+		["left", "right", "top", "bottom"].forEach(function(side){
+			var pins = m.pins.filter(function(p){return p.side === side; });
+			for(var i=0; i<pins.length; i++) {
+				that.addPin(pins[i].name, side, (i+1)/(pins.length+1));
+			}
+		});
+	}
+
+	this.component.node().addEventListener("click", function(e) {
+		e.stopPropagation();
+		if(e.which !== 1 || that._preventClick) return that._preventClick = false;
+		e.module = m;
+		if(editor.creator && editor.creator.onClick(e)) return;
+		editor.select(m, e.shiftKey);
+	});
+
+}
+util.inherits(ModuleComponent, EventEmitter);
+
+
+ModuleComponent.prototype._createComponent = function(m) {
+	var w = this.w = 85;
+	var h = this.h = 65;
+
+	var c = this.editor.gModules.append("g")
+		.attr("transform" , "translate(" + m.x+ "," +m.y + ")");
+
+	c.append("rect")
+		.classed("module", true)
+		.attr("x", -w/2)
+		.attr("y", -h/2)
+		.attr("rx", 3)
+		.attr("ry", 3)
+		.attr("width", w)
+		.attr("height", h);
+
+	c.append("text")
+		.classed("module", true)
+		.text(m.class + " " + m.id)
+		.attr('text-anchor',"middle")
+		.attr('y', h/2+2)
+		.attr("dominant-baseline", "text-before-edge");
+
+	return c;
+}
+
+
+ModuleComponent.prototype.addPin = function(name, side, pct) {
+	var that = this;
+	var w = this.w;
+	var h = this.h;
+	var x,y;
+	var MARG = 1;
+	if(side=="left") { x = -w/2; y = (pct-0.5)*MARG*h; }
+	else if(side=="right") { x = w/2; y = (pct-0.5)*MARG*h; }
+	else if(side=="top") { x = (pct-0.5)*MARG*w; y = -h/2; }
+	else if(side=="bottom") { x = (pct-0.5)*MARG*w; y = h/2; }
+	else return;
+
+	var pin = this.component.append("rect")
+		.classed("pin", true)
+		.attr("x", x-5/2)
+		.attr("y", y-5/2)
+		.attr("rx", 1)
+		.attr("ry", 1)
+		.attr("width", 5)
+		.attr("height", 5);
+
+	this.component.append("text")
+		.classed("pin", true)
+		.attr("x", side==="top" || side==="bottom" ? x : side==="left" ? x + 3 : x - 3)
+		.attr("y", side==="left" || side==="right" ? y : side==="top" ? y + 3 : y - 3)
+		.attr("dominant-baseline", side==="left" || side==="right" ? "central" : side==="top" ?  "text-before-edge" : "text-after-edge" )
+		.attr("text-anchor", side==="top" || side==="bottom" ? "middle" : side==="left" ? "start" : "end")
+		.text(name);
+
+	var ctm = pin.node().getCTM();
+	this.m.pinCoords[name] = {x:ctm.e+x,y:ctm.f+y, relX:x, relY:y};
+
+	pin.node().addEventListener("click", function(e) {
+		e.stopPropagation();
+		if(e.which !== 1 || that._preventClick) return that._preventClick = false;
+		e.module = that.m;
+		e.pin = name;
+		if(that.editor.creator && that.editor.creator.onClick(e)) return;
+		that.editor.select(that.m, e.shiftKey);
+	});
+
+}
+
+
+ModuleComponent.prototype.move = function(x,y) {
+	x = parseFloat(x); y = parseFloat(y);
+	var tr = d3.transform(this.component.attr("transform"));
+	this.m.params.x = this.m.x = tr.translate[0] = x;
+	this.m.params.y = this.m.y = tr.translate[1] = y;
+
+	for(var i in this.m.pinCoords) {
+		this.m.pinCoords[i].x = x + this.m.pinCoords[i].relX;
+		this.m.pinCoords[i].y = y + this.m.pinCoords[i].relY;
+	}
+
+	this.component.attr("transform", "translate("+tr.translate+")");
+	this.emit("move", {x:x,y:y});
+}
+
+ModuleComponent.prototype.setSelected = function(bSelected) {
+	this.component.classed("selected", bSelected);
+}
+
+ModuleComponent.prototype.remove = function() {
+	if(!this.bAttached) return;
+	this.bAttached = false;
+	this.m.outs.slice().forEach(function(l) { if(l.component) l.component.remove();	});
+	this.m.ins.slice().forEach(function(l) { if(l.component) l.component.remove();	});
+	this.m.delete();
+	$(this.component.node()).detach();
+	this.editor.notifyModify();
+}
+
+ModuleComponent.prototype.reattach = function() {
+	if(this.bAttached) return;
+	this.bAttached = true;
+	this.m.reattach();
+	$(this.editor.gModules.node()).append($(this.component.node()));
+	this.editor.notifyModify();
+}
+
+
+ModuleComponent.prototype.isInRect = function(rect) {
+	return rect_contains_rect(rect, {x:this.m.x - this.w/2, y:this.m.y - this.h/2, w:this.w, h:this.h});
+}
+
+
+
+
+///////////
+// UTILS //
+///////////
+
+
+/** @return true if rectangle r1 fully contains rectangle r2 */
+function rect_contains_rect(r1, r2) {
+	return rect_contains_pt(r1, {x:r2.x, y:r2.y}) && rect_contains_pt(r1, {x:r2.x+r2.w, y:r2.y+r2.h});
+}
+
+/** @return true if rectangle r contains point p */
+function rect_contains_pt(r, p) {
+	return p.x >= r.x && p.y >= r.y && p.x <= r.x + r.w && p.y <= r.y + r.h;
+}
+
+</script>

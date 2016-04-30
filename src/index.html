@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" type="text/css" href="./main.css">
+	<link rel="import" href="./bower_components/polymer/polymer.html">
+	<link rel="import" href="./workbench/workbench.html">
+	<link rel="import" href="./ui/tabbed-pane.html">
+	<link rel="import" href="./views/explorer.html">
+	<link rel="import" href="./views/console.html">
+	<link rel="import" href="./views/editor.html">
+	<link rel="import" href="./views/properties.html">
+	<link rel="import" href="./views/creator.html">
+
+  </head>
+
+  <body>
+    <edgar-workbench></edgar-workbench>
+  </body>
+
+  <script>
+
+    window.WINDOW = require('remote').getCurrentWindow();
+    window.$ = window.jQuery = require('jquery');
+
+    require('jquery-ui');
+    require('./utils/utils');
+
+    require('process').chdir(process.env.PWD);
+
+  </script>
+</html>

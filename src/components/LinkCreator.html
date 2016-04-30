@@ -1,0 +1,52 @@
+<script src="../bower_components/d3/d3.min.js"></script>
+<script>
+
+function LinkCreator(editor, l) {
+	LinkComponent.call(this, editor, l);
+	var that = this;
+	this.editor = editor;
+
+	this.spot = this.editor.gLinks.append("circle").classed("link-creator", true).attr("r", 6).style({"pointer-events":"none", "visibility": "hidden"});
+
+}
+util.inherits(LinkCreator, LinkComponent);
+
+
+LinkCreator.prototype.onMousemove = function(e) {
+	var that = this;
+	function createPath() {
+		if(!that.getSrcPoint() || !that._pt) return "";
+		if(!that.link.dst) return "M"+that.getSrcPoint() + "L"+ [that._pt.x, that._pt.y];
+		return that._createPath();
+	}
+
+	this._pt = this.editor.clientToWorld({x:e.offsetX,y:e.offsetY});
+	this.component.attr("d", createPath());
+	this.spot.attr("cx", this._pt.x).attr("cy", this._pt.y).style({"visibility":"visible"})
+}
+
+LinkCreator.prototype.onClick = function(e) {
+	if(!e.module) return;
+	if(!this.link.src) {
+		this.link.set("src", e.module);
+		if(e.pin) this.link.set("srcPin", e.pin);
+	} else {
+		this.link.set("dst", e.module);
+		if(e.pin) this.link.set("dstPin", e.pin);
+		this.create();
+	}
+}
+
+LinkCreator.prototype.create = function() {
+	this.spot.remove();
+	this.component.attr("d", this._createPath());
+	if(this.editor.creator === this)  this.editor.creator = null;
+	this.editor.addHistory(new CommandCreate(this.editor, this.link));
+}
+
+LinkCreator.prototype.cancel = function() {
+	this.component.remove();
+	if(this.editor.creator === this) this.editor.creator = null;
+}
+
+</script>

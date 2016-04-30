@@ -1,0 +1,40 @@
+
+<dom-module id="view-console">
+<style>
+:host { position:absolute; left:0; right:0; top:0; bottom:0; }
+pre {
+	width:100%; height:100%; overflow: auto;
+	background:black;
+	font-family:Monospace;
+	font-size:14px;
+	color:#bbbbbb;
+	padding:2px;
+	box-sizing: border-box;
+}
+</style>
+<template><pre id="content">{{content}}</pre></template>
+</dom-module>
+<script>
+
+Polymer({
+	is: 'view-console',
+	properties: {
+		content:{notify:true, value:""}
+	},
+
+	attached: function() {
+		var that = this;
+		var i = 0;
+		WORKBENCH.console = this;
+	},
+
+	out: function(x) {
+		var that = this;
+		ZOB = x;
+		this.content += x + "\n";
+		setTimeout(function(){that.$.content.scrollTop = that.$.content.scrollHeight;}, 1);
+	}
+});
+
+
+</script>

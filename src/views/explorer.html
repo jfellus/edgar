@@ -1,0 +1,56 @@
+<link rel="import" href="../ui/tree-view.html">
+
+<dom-module id="view-explorer">
+<style>
+	:host { width:100%; height:100%; overflow-y: auto; }
+</style>
+<template>
+	<tree-view items="{{projects}}"></tree-view>
+</template>
+</dom-module>
+<script>
+
+Polymer({
+	is: 'view-explorer',
+	properties: {
+		projects: {notify:true, value:[]}
+	},
+
+	attached: function() {
+		this.setProjects([
+			{name:"Project1", icon:"project.png", items:[
+				{name:"Resources", icon:"resources.png", items:[
+					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
+				]},
+				{name:"Main", icon:"script.png", items:[
+					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
+				]}
+			]},
+
+			{name:"Project1", icon:"project.png", items:[
+				{name:"Resources", icon:"resources.png", items:[
+					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
+				]},
+				{name:"Main", icon:"script.png", items:[
+					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
+				]}
+			]},
+
+			{name:"Project1", icon:"project.png", items:[
+				{name:"Resources", icon:"resources.png", items:[
+					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
+				]},
+				{name:"Main", icon:"script.png", items:[
+					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
+				]}
+			]}
+		]);
+	},
+
+	setProjects: function(p) {
+		this.set("projects", p);
+	}
+});
+
+
+</script>

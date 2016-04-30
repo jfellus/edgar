@@ -1,0 +1,111 @@
+<script>
+
+function History() {
+	this.undoable = [];
+	this.redoable = [];
+}
+
+History.prototype.undo = function() {
+	if(!this.undoable.length) return;
+	var cmd = this.undoable.popLast();
+	this.redoable.push(cmd);
+	cmd.undo();
+}
+
+History.prototype.redo = function() {
+	if(!this.redoable.length) return;
+	var cmd = this.redoable.popLast();
+	this.undoable.push(cmd);
+	cmd.redo();
+}
+
+History.prototype.add = function(command) {
+	this.redoable = [];
+	if(!command.undo || !command.redo) throw "Not a command";
+	this.undoable.push(command);
+}
+
+
+
+//////////////
+// COMMANDS //
+//////////////
+
+function CommandDelete(editor, selection) {
+	var selectedLinks = [];
+	selection.forEach(function(m) {
+		m.outs.forEach(function(l) { if(selectedLinks.indexOf(l)===-1) selectedLinks.push(l);});
+		m.ins.forEach(function(l) { if(selectedLinks.indexOf(l)===-1) selectedLinks.push(l);});
+	});
+
+	this.undo = function() {
+		selectedLinks.forEach(function(l) { if(l.component) l.component.reattach(); });
+		selection.forEach(function(m) {	if(m.component) m.component.reattach(); });
+	};
+
+	this.redo = function() {
+		selectedLinks.forEach(function(l) { if(l.component) l.component.remove(); });
+		selection.forEach(function(m) {	if(m.component) m.component.remove(); });
+	};
+}
+
+function CommandSet(editor, selection, oldValues) {
+	if(!Array.isArray(selection)) selection = [selection];
+	if(!Array.isArray(oldValues)) oldValues = [oldValues];
+	var newValues = selection.map(function(m, i) {
+		var val = {};
+		for(var k in oldValues[i]) { val[k] = m.get(k); }
+		return val;
+	});
+	ZOB = newValues;
+	ZIB = oldValues;
+
+	this.undo = function() {
+		selection.forEach(function(m, i){
+			for(var k in oldValues[i]) { m.set(k, oldValues[i][k]); }
+		});
+	};
+
+	this.redo = function() {
+		selection.forEach(function(m, i) {
+			for(var k in newValues[i]) { m.set(k, newValues[i][k]); }
+		});
+	};
+}
+
+function CommandCreate(editor, m) {
+	this.undo = function() {
+		if(m.component) m.component.remove();
+	};
+	this.redo = function() {
+		if(m.component) m.component.reattach();
+	};
+}
+
+function CommandPaste(editor, selection) {
+	this.undo = function() {
+		selection.forEach(function(m) {
+			if(m.component) m.component.remove();
+		})
+	};
+	this.redo = function() {
+		selection.forEach(function(m) {
+			if(m.component) m.component.reattach();
+		});
+	};
+}
+
+function CommandCut(editor, selection) {
+	this.undo = function() {
+		selection.forEach(function(m) {
+			if(m.component) m.component.reattach();
+		});
+	};
+	this.redo = function() {
+		selection.forEach(function(m) {
+			if(m.component) m.component.remove();
+		});
+	};
+}
+
+</script>

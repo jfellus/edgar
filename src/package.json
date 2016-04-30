@@ -23,6 +23,9 @@
   "homepage": "https://github.com/jfellus/edgar#readme",
   "devDependencies": {
     "electron-prebuilt": "^0.37.0",
-    "electron-packager": "~7.0.1"
+    "electron-packager": "~7.0.1",
+    "jquery": "*",
+    "jquery-ui": "*",
+    "d3": "*"
   }
 }

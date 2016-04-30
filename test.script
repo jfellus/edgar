@@ -1,0 +1,44 @@
+Script new_script_0
+Include pg_nav
+Include pg_basics
+Include pg_gtk
+
+
+[Modules]
+Camera cam
+ka = "va"
+kb = "vb"
+kc = "kb + ka"
+x = 551.9920188468384
+y = 280.42582989251576
+
+PTCG ptcg
+radius = 10.0
+john = "jimmy"
+x = 189.4666985065349
+y = 133.40812582259375
+
+Zib zob
+x = 973.3353221089166
+y = 257.2347365267545
+
+Solo solo
+x = 744.9077355513085
+y = 356.8978623823858
+
+Duo duo
+x = 899.0287442474645
+y = 642.5907420925382
+
+
+
+[Links]
+cam.a -> ptcg.b
+
+cam.c -> zob
+type = async
+
+ptcg -> zob
+type = sync
+
+solo -> duo

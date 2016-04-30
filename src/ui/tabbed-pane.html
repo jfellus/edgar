@@ -1,0 +1,243 @@
+
+<dom-module id="tabbed-pane">
+<style>
+:host {
+	position:absolute;
+	top:0;left:0;right:0;bottom:0;
+	background:white;
+	border-radius:8px;
+	box-sizing: border-box;
+	border:1px solid #cccccc;
+	box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+	padding:0; margin:0;
+	overflow: hidden;
+}
+:host > table td { position:relative; }
+
+#header {
+	position:relative;
+	display:flex; width:100%;
+	justify-content: flex-start;
+	align-items: stretch;
+	height:auto;
+	flex-direction: row;
+	background:#dddddd;
+	/*border-bottom:1px solid #cccccc;*/
+	white-space: nowrap;
+	overflow:hidden;
+	border-top-left-radius:8px;
+	border-top-right-radius:8px;
+	padding:0; margin:0;
+	border:none;
+	min-height:20px;
+}
+
+#header > div {
+	position:relative;
+	display:inline-block;
+	padding:3px;
+	color:rgba(0,0,0,0.66);
+	/*transition:all 0.2s;*/
+	cursor:hand;
+	max-width:200px;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+
+#header > div:hover {
+	white-space: nowrap;
+	background:#f0f0f0;
+	border-top-left-radius:8px;
+	border-top-right-radius:8px;
+	color:black;
+	z-index:0;
+	overflow: hidden;
+}
+
+
+#header > div.active {
+	background:white;
+	box-shadow: 0 0 45px rgba(0,0,0,0.5);
+	border-top:1px solid rgba(0,0,0,0.2);
+	border-right:1px solid rgba(0,0,0,0.2);
+	border-top-left-radius:8px;
+	border-top-right-radius:8px;
+	color:black;
+	border-bottom:13px solid white;
+	margin-bottom:-13px;
+	z-index: 1000;
+}
+
+span.name {
+	display: block;
+  text-align: right;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+#content {
+	position:absolute;
+	top:0; bottom:0; left:0; right:0;
+	padding:3px;
+	display:block;
+	background:white;
+	box-sizing: border-box;
+	overflow: auto;
+}
+
+span.close {
+	display:block;
+	margin:0;
+	margin-left: 0px;
+	font-weight: bold;
+	color: rgba(100,200,0,0.4);
+	background: url('../resources/icons/close_tab.png') no-repeat right;
+	width: 15px;
+	height: 20px;
+	visibility:hidden;
+}
+span.close:hover {
+	background-image: url("../resources/icons/close_tab_hover.png");
+}
+#header > div.active span.close { visibility: visible; }
+#header > div:hover span.close { visibility: visible; }
+
+#botline {
+		position:absolute;
+		width:100%;
+		bottom:0;
+		border-bottom:1px solid rgba(0,0,0,0.2);
+		box-shadow:0 -1px 1px rgba(0,0,0,0.1);
+		z-index:1;
+}
+
+table.tabHeader { float:right; max-width:50%; white-space: nowrap;}
+.tabHeader td:first-child { overflow:hidden; text-align:right; white-space: nowrap;}
+
+.umbrella {
+	position:absolute;
+	left:0; height:100%;
+	display:block;
+	background:linear-gradient( to right, #dddddd,#dddddd, transparent,transparent);
+	width:10px;
+}
+#header > div:hover .umbrella { background:linear-gradient( to right,#f0f0f0,#f0f0f0, transparent,transparent); }
+#header > div.active .umbrella { background:linear-gradient( to right,white,white, transparent,transparent); }
+
+</style>
+<template>
+	<table><tr><td height="1px">
+		<div id="header">
+			<span id="botline"></span>
+			<template is="dom-repeat" items="{{tabs}}">
+				<div id="tab" on-tap="selectTab" class$="{{computeClass(item, selectedTab)}}">
+					<span class="umbrella"></span>
+					<table class='tabHeader'><tr><td><span class="name">{{item}}</span></td><td width="20px"><span class="close" on-tap="closeTab"></span></td></tr></table>
+				</div>
+			</template>
+		</div>
+	</td></tr><tr><td height="*">
+		<div id="content"></div>
+	</td></tr></table>
+</template>
+</dom-module>
+<script>
+
+Polymer({
+	is: 'tabbed-pane',
+	properties: {
+		selectedTab:{notify:true, value:null}
+	},
+
+	attached: function () {
+		var that = this;
+		if(!this.tabs) this.tabs = [];
+	},
+
+	addTab: function(element) {
+		var that = this;
+		var label = element.label;
+		if(!label) label = $(element).attr("label");
+		if(!label) label = element.tagName;
+		if(this.tabs.indexOf(label)!==-1) return this.selectTab(label);
+
+		$(element).attr("label", label);
+		$(element).hide();
+		$(this.$.content).append($(element));
+
+		$(element).get(0).addEventListener('label', function(e) {
+			var newLabel = e.detail;
+			if(newLabel === label) return;
+			that.closeTab(newLabel);
+			that.set('tabs', that.tabs.map(function(t) { return t===label ? newLabel : t; }));
+			$(element).attr("label", newLabel);
+			label = newLabel;
+			that.async(function(){that.selectTab(newLabel);});
+		});
+
+		$(element).on('close', function() { that.closeTab(label, true); });
+
+		this.push('tabs', label);
+		this.async(function(){this.selectTab(label);});
+		return true;
+	},
+
+	selectTab: function(tab) {
+		var that = this;
+		if(tab && typeof(tab)==="string") {
+			this.tabs.forEach(function(tabId){
+				var tabContent = that.getTabContent(tabId);
+				tabContent.hide();
+				if(tabId !== tab) return;
+				tabContent.show();
+				tabContent.focus();
+				if(tabContent.get(0).onFocus) tabContent.get(0).onFocus();
+			});
+			this.selectedTab = tab;
+		} else if(tab.target) {
+			tab.stopPropagation(); tab.preventDefault();
+			return this.selectTab(this.tabId(tab.target));
+		} else if(tab.text && $(tab).text()) {
+			return this.selectTab(this.tabId(tab));
+		}
+	},
+
+	closeTab: function(tab, force) {
+		var that = this;
+		if(tab && typeof(tab)==="string") {
+			var i = this.tabs.indexOf(tab);
+			if(i===-1) return;
+			if(force!==true && $(this.getTabContent(tab)).get(0).close) return $(this.getTabContent(tab)).get(0).close();
+			if(this.selectedTab === tab) {
+				if(this.tabs.length > 1) this.selectTab(this.tabs[i+1 >= this.tabs.length ? i-1 : i+1]);
+				else this.selectedTab = null;
+			}
+			this.splice('tabs', i, 1);
+			this.getTabContent(tab).remove();
+		}
+		else if(tab.target) {
+			tab.stopPropagation(); tab.preventDefault();
+			return this.closeTab(this.tabId($(tab.target).parents("#tab")), force);
+		}
+	},
+
+	getTabContent: function(tab) {
+		var that = this;
+		if(tab && typeof(tab) ==="string") {
+			return $(that.$.content).children("[label='"+tab+"']");
+		} else if($(tab).text()){
+			var tabId = $(tab).text().trim();
+			return that.getTabContent(tab);
+		}
+	},
+
+	tabId: function(tab) {
+		return $(tab).text().trim();
+	},
+
+	computeClass: function(tab) { return tab===this.selectedTab ? "active" : ""; }
+});
+
+
+</script>

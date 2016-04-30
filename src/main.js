@@ -4,16 +4,20 @@ const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
-let mainWindow;
+// console.log = function (d) {  process.stdout.write(d + '\n'); };
+// console.error = function (d) {  process.stderr.write(d + '\n'); };
+
+
+let WINDOW;
 
 function main() {
-  mainWindow = new BrowserWindow({width: 800, height: 600});
-  mainWindow.setTitle("Edgar");
-  mainWindow.loadURL('file://' + __dirname + '/workbench/workbench.html');
-  //mainWindow.webContents.openDevTools();
-  mainWindow.on('closed', function() { mainWindow = null; });
+  WINDOW = new BrowserWindow({width: 800, height: 600});
+  WINDOW.setTitle("Edgar");
+  WINDOW.loadURL('file://' + __dirname + '/index.html');
+  WINDOW.webContents.openDevTools();
+  WINDOW.on('closed', function() { WINDOW = null; });
 }
 
-app.on('ready', main);
+app.on('ready', main); 
 app.on('window-all-closed', function () { if (process.platform !== 'darwin') app.quit(); });
-app.on('activate', function () {  if (mainWindow === null) main(); });
+app.on('activate', function () {  if (WINDOW === null) main(); });

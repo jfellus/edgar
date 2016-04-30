@@ -1,0 +1,108 @@
+
+<dom-module id="view-creator">
+<style>
+	:host { padding:0; margin:0;}
+	li { margin:0; padding:0;  display:flex; flex-direction: column;}
+	ul { margin:0; padding:0;}
+	table { width:100%; height:auto; padding:0; margin:0;}
+	td { padding: 4px 10px; border-bottom:1px solid #dddddd;}
+	td:first-child { width:0px; }
+	.category {
+		display:flex; flex-direction: row; align-items: center; align-content: center; justify-content: flex-start;
+		font-size:13px; font-weight:bold; padding-top:4px; cursor: hand;
+	}
+	.category img { margin:5px;}
+	tr:hover > td { cursor:hand; background: rgba(0,0,255,0.1);}
+	.modules { padding-bottom:15px;}
+
+	input {
+		font-size:13px; width:100%; padding:4px; margin:0;
+		padding-left:23px;
+		background:url("../resources/icons/find.png") no-repeat white 2px 3px;
+	}
+	#search { background:#eeeeee; border-bottom:1px solid #cccccc; padding:5px;}
+</style>
+<template>
+	<div id="search">
+	<input type="text" value="{{filter::input}}"></input>
+	</div>
+	<ul id="ul">
+		<template id='categories' is="dom-repeat" as="cat" items='{{categories}}' filter="filterCategories">
+			<li>
+				<div class="category" on-tap="onOpenCategory"><img src="../resources/icons/project.png"> {{cat.name}}</div>
+				<div class="modules">
+				<table cellspacing=0 cellpadding=0 border=0>
+					<template class='list' is="dom-repeat" items='{{cat.modules}}' filter="filterModules" observe="cat.modules filter">
+						<tr on-tap="onClick"><td width="1%">ICON</td><td width='100%'>{{item.name}}</td></tr>
+					</template>
+				</table>
+				</div>
+			</li>
+		</template>
+	</ul>
+</template>
+</dom-module>
+<script>
+
+
+Polymer({
+	is: 'view-creator',
+	properties: {
+		categories: {notify:true, value:[]},
+		filter: {notify:true, value:'', observer:'onFilterChange'}
+	},
+
+	attached: function() {
+		this.load();
+	},
+
+	load: function() {
+		this.set('categories', [
+			{name:"Promethe", modules:[
+				{name:"f_affiche_image_from_extension"},
+				{name:"f_perception"},
+				{name:"f_ptcg"},
+				{name:"f_gauss"}
+			]},
+			{name:"OpenCV", modules:[
+				{name:"mat_prout"},
+				{name:"mat_eiuh"},
+				{name:"ocv_'iueh"},
+				{name:"cv_riueu"}
+			]},
+			{name:"PGCC", modules:[
+				{name:"pg_ciuheu"},
+				{name:"pg_zeroi"},
+				{name:"pg_fsdiuh"},
+				{name:"pg_qiuq"}
+			]}
+		]);
+	},
+
+	onClick: function(evt) {
+		WORKBENCH.createModule({class:$(evt.target).text()});
+	},
+
+	onOpenCategory: function(evt) {
+		$(evt.target).next().slideToggle();
+	},
+
+	onFilterChange: function() {
+		this.$.categories.render();
+		$("#ul").find(".list").each(function() { this.render(); });
+	},
+
+	filterCategories: function(item) {
+		var that = this;
+		return item.modules.filter(function(m) { return !that.filter || m.name.indexOf(that.filter)!==-1; }).length>0;
+	},
+
+	filterModules: function(item) {
+		return !this.filter || item.name.indexOf(this.filter)!==-1;
+	}
+
+
+});
+
+
+</script>
