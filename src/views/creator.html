@@ -1,18 +1,25 @@
 
 <dom-module id="view-creator">
 <style>
-	:host { padding:0; margin:0;}
+	:host { position:absolute; left:0;top:0;bottom:0;right:0; padding:0; margin:0;}
+	:host > table { position:absolute; left:0; top:0; bottom:0; right:0;}
+	td.list {  position:relative; }
+	td.list > div { position:absolute; left:0; top:0; bottom:0; right:0; overflow:auto; }
 	li { margin:0; padding:0;  display:flex; flex-direction: column;}
-	ul { margin:0; padding:0;}
-	table { width:100%; height:auto; padding:0; margin:0;}
-	td { padding: 4px 10px; border-bottom:1px solid #dddddd;}
-	td:first-child { width:0px; }
+	ul { position:absolute; left:0;top:0;bottom:0;right:0; padding:0; margin:0;}
+	#search { height:1px; }
+
+	#list { font-size:12px; }
+
+	#list table { width:100%; height:auto; padding:0; margin:0;}
+	#list td { padding: 4px 10px; cursor:pointer; }
+	#list td:first-child { width:0px; }
 	.category {
 		display:flex; flex-direction: row; align-items: center; align-content: center; justify-content: flex-start;
 		font-size:13px; font-weight:bold; padding-top:4px; cursor: hand;
 	}
 	.category img { margin:5px;}
-	tr:hover > td { cursor:hand; background: rgba(0,0,255,0.1);}
+	#list tr:hover > td { cursor:hand; background: rgba(0,0,255,0.1);}
 	.modules { padding-bottom:15px;}
 
 	input {
@@ -23,23 +30,24 @@
 	#search { background:#eeeeee; border-bottom:1px solid #cccccc; padding:5px;}
 </style>
 <template>
-	<div id="search">
-	<input type="text" value="{{filter::input}}"></input>
-	</div>
-	<ul id="ul">
+	<table><tr><td id="search">
+		<input type="text" value="{{filter::input}}"></input>
+	</td></tr><tr><td class="list"><div>
+	<ul id="list">
 		<template id='categories' is="dom-repeat" as="cat" items='{{categories}}' filter="filterCategories">
 			<li>
 				<div class="category" on-tap="onOpenCategory"><img src="../resources/icons/project.png"> {{cat.name}}</div>
 				<div class="modules">
 				<table cellspacing=0 cellpadding=0 border=0>
 					<template class='list' is="dom-repeat" items='{{cat.modules}}' filter="filterModules" observe="cat.modules filter">
-						<tr on-tap="onClick"><td width="1%">ICON</td><td width='100%'>{{item.name}}</td></tr>
+						<tr on-tap="onClick"><td width="1%">ICON</td><td width='100%' class="name">{{item.name}}</td></tr>
 					</template>
 				</table>
 				</div>
 			</li>
 		</template>
-	</ul>
+	</div></ul>
+</td></tr></table>
 </template>
 </dom-module>
 <script>
@@ -80,7 +88,9 @@ Polymer({
 	},
 
 	onClick: function(evt) {
-		WORKBENCH.createModule({class:$(evt.target).text()});
+		var e = $(evt.target);
+		if(!e.hasClass("name")) e = $(e).parents("tr").children(".name");
+		WORKBENCH.createModule({class:e.text()});
 	},
 
 	onOpenCategory: function(evt) {

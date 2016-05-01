@@ -3,7 +3,7 @@ const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
 
 let WORKBENCH = window.WORKBENCH = null;
-// var MENUBAR = require("menubar");
+var MENUBAR = require('./workbench/menubar');
 
 
 Polymer({
@@ -47,7 +47,7 @@ Polymer({
 	init: function() {
 		WINDOW.maximize();
 
-		// Menu.setApplicationMenu(this.menubar = Menu.buildFromTemplate(MENUBAR);
+		Menu.setApplicationMenu(this.menubar = Menu.buildFromTemplate(MENUBAR));
 
 		$(this.$.toolbar).children().each(function(){
 			if(this.tagName === "SEPARATOR") return;

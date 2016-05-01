@@ -655,3 +655,16 @@ function create_editable_list_editable(selected_items) {
 	if(selected_items) for(var i = 0; i<selected_items.length; i++) list.add(selected_items[i]);
 	return list;
 }
+
+
+//////////////
+// ELECTRON //
+//////////////
+
+const remote = require('remote');
+const dialog = remote.require('dialog');
+window.YesNoCancel = function(msg, cb) {
+	var win = remote.getCurrentWindow();
+	if(!win) throw "No BrowserWindow";
+	return dialog.showMessageBox(win, { buttons: ["Yes", "No", "Cancel"], message:msg }, cb);
+}
