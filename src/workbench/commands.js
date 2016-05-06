@@ -1,25 +1,76 @@
 Commands = {};
 
-Commands.New = function() { WORKBENCH.newDocument(); };
+Commands.New = function() {
+	WORKBENCH.openEditor();
+};
+
 Commands.Open = function(file) {
 	if(!file) return file_open_dialog(function(f){Commands.Open(f);}, "*.*");
-	else WORKBENCH.open(file);
+	else WORKBENCH.openEditor(file);
 };
-Commands.Save = function() { WORKBENCH.save(); };
 
-Commands.SaveAs = function() { WORKBENCH.saveAs(); };
-Commands.Close = function() { WORKBENCH.close(); };
+Commands.Save = function() {
+	if(WORKBENCH.curEditor && WORKBENCH.curEditor.modified) WORKBENCH.curEditor.save();
+ };
 
-Commands.Undo = function() { WORKBENCH.undo(); };
-Commands.Redo = function() { WORKBENCH.redo(); };
-Commands.Cut = function() {	WORKBENCH.cut();};
-Commands.Copy = function() { WORKBENCH.copy();};
-Commands.Paste = function() { WORKBENCH.paste();};
-Commands.Quit = function() {WORKBENCH.quit();};
+Commands.SaveAs = function(filename) {
+	if(!WORKBENCH.curEditor) return;
+	if(!filename) return file_open_dialog(function(f){ if(f) Commands.SaveAs(f); }, "*.*");
+	WORKBENCH.curEditor.saveAs(filename);
+};
 
-Commands.CreateModule = function() {WORKBENCH.createModule();};
-Commands.CreateLink = function() { WORKBENCH.createLink();};
-Commands.Delete = function() { WORKBENCH.delete();};
+Commands.Close = function() {
+	if(WORKBENCH.curEditor) WORKBENCH.curEditor.close();
+};
+
+Commands.Undo = function() {
+	if(WORKBENCH.curEditor) WORKBENCH.curEditor.undo();
+};
+
+Commands.Redo = function() {
+	if(WORKBENCH.curEditor) WORKBENCH.curEditor.redo();
+};
+
+Commands.Cut = function() {
+	if(WORKBENCH.curEditor) WORKBENCH.curEditor.cut();
+};
+
+Commands.Copy = function() {
+	if(WORKBENCH.curEditor) WORKBENCH.curEditor.copy();
+};
+
+Commands.Paste = function() {
+	if(WORKBENCH.curEditor) WORKBENCH.curEditor.paste();
+};
+
+
+// TODO
+Commands.Quit = function(bForce) {
+	if(bForce) {
+		WINDOW.close(true);
+		gui.App.quit();
+	} else {
+		if(confirm("Are you sure ?")) Commands.quit(true)
+	}
+};
+
+Commands.CreateModule = function(hint) {
+	if(!hint) hint = WORKBENCH._createModule_last_hint;
+	WORKBENCH._createModule_last_hint = hint;
+	if(!hint || !WORKBENCH.curEditor) return;
+	WORKBENCH.curEditor.createModule(hint);
+};
+
+Commands.CreateLink = function(hint) {
+	if(!hint) hint = WORKBENCH._createLink_last_link_hint;
+	WORKBENCH._createLink_last_link_hint = hint;
+	if(!WORKBENCH.curEditor) return;
+	WORKBENCH.curEditor.createLink(hint);
+};
+
+Commands.Delete = function() {
+	if(WORKBENCH.curEditor) WORKBENCH.curEditor.delete();
+};
 
 Commands.Search = function() {};
 

@@ -30,10 +30,16 @@ Duo duo
 x = 899.0287442474645
 y = 642.5907420925382
 
+f_affiche_image_from_extension f_affiche_image_from_extension0
+x = 325
+y = 430
+
 
 
 [Links]
 cam.a -> ptcg.b
+bezierA = 100,100
+bezierB = -100,-100
 
 cam.c -> zob
 type = async

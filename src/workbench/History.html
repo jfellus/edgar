@@ -1,28 +1,28 @@
 <script>
 
 function History() {
-	this.undoable = [];
-	this.redoable = [];
+	this.undoables = [];
+	this.redoables = [];
 }
 
 History.prototype.undo = function() {
-	if(!this.undoable.length) return;
-	var cmd = this.undoable.popLast();
-	this.redoable.push(cmd);
+	if(!this.undoables.length) return;
+	var cmd = this.undoables.popLast();
+	this.redoables.push(cmd);
 	cmd.undo();
 }
 
 History.prototype.redo = function() {
-	if(!this.redoable.length) return;
-	var cmd = this.redoable.popLast();
-	this.undoable.push(cmd);
+	if(!this.redoables.length) return;
+	var cmd = this.redoables.popLast();
+	this.undoables.push(cmd);
 	cmd.redo();
 }
 
 History.prototype.add = function(command) {
-	this.redoable = [];
+	this.redoables = [];
 	if(!command.undo || !command.redo) throw "Not a command";
-	this.undoable.push(command);
+	this.undoables.push(command);
 }
 
 
@@ -57,8 +57,6 @@ function CommandSet(editor, selection, oldValues) {
 		for(var k in oldValues[i]) { val[k] = m.get(k); }
 		return val;
 	});
-	ZOB = newValues;
-	ZIB = oldValues;
 
 	this.undo = function() {
 		selection.forEach(function(m, i){

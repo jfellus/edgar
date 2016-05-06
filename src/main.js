@@ -4,10 +4,6 @@ const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
-// console.log = function (d) {  process.stdout.write(d + '\n'); };
-// console.error = function (d) {  process.stderr.write(d + '\n'); };
-
-
 let WINDOW;
 
 function main() {

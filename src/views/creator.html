@@ -64,33 +64,31 @@ Polymer({
 		this.load();
 	},
 
+	addModule: function(m) {
+		if(!m.category) m.category = "Others";
+		if(!m.name) return;
+		var had = false;
+		this.set("categories", this.categories.map(function(c) {
+			if(c.name===m.category)  { c.modules.push(m); had = true; }
+			return c;
+		}));
+		if(!had) this.push("categories", {name:m.category, modules:[m]});
+	},
+
 	load: function() {
-		this.set('categories', [
-			{name:"Promethe", modules:[
-				{name:"f_affiche_image_from_extension"},
-				{name:"f_perception"},
-				{name:"f_ptcg"},
-				{name:"f_gauss"}
-			]},
-			{name:"OpenCV", modules:[
-				{name:"mat_prout"},
-				{name:"mat_eiuh"},
-				{name:"ocv_'iueh"},
-				{name:"cv_riueu"}
-			]},
-			{name:"PGCC", modules:[
-				{name:"pg_ciuheu"},
-				{name:"pg_zeroi"},
-				{name:"pg_fsdiuh"},
-				{name:"pg_qiuq"}
-			]}
-		]);
+		this.addModule({name:"f_affiche_image_from_extension", category:"Promethe"});
+		this.addModule({name:"f_perception", category:"Promethe"});
+		this.addModule({name:"f_ptcg", category:"Promethe"});
+		this.addModule({name:"f_gauss", category:"Promethe"});
+		this.addModule({name:"mat_test", category:"OpenCV"});
+		this.addModule({name:"sift", category:"OpenCV"});
+		this.addModule({name:"hough", category:"OpenCV"});
 	},
 
 	onClick: function(evt) {
 		var e = $(evt.target);
 		if(!e.hasClass("name")) e = $(e).parents("tr").children(".name");
-		WORKBENCH.createModule({class:e.text()});
+		Commands.CreateModule({class:e.text()});
 	},
 
 	onOpenCategory: function(evt) {

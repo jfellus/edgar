@@ -56,13 +56,6 @@ Array.prototype.has = function(val) {
 	return this.indexOf(val)!==-1;
 };
 
-$(function(){
-	$.extend($.fn.disableTextSelect = function() {
-	return this.each(function(){$(this).mousedown(function(e){
-		if(!document.edragged && e.button==0) return false;
-	});});
-});});
-
 
 function file_basename(f) {
 	return f.indexOf("/")!==-1 ? f.substring(f.lastIndexOf("/")+1, f.length) : f;
@@ -92,10 +85,8 @@ function zero_pad(num, size) {
 // DEBUG //
 ///////////
 
-var dbg_elt = null;
-$(function() { dbg_elt = $("body");});
 function DBG(x) {
-	if(dbg_elt) dbg_elt.html("<div>"+x+"</div>");
+ console.log(x);
 }
 
 
@@ -208,12 +199,6 @@ function link_list_to_file(list, file, callback) {
 		_d = setTimeout(update, 1000);
 	});
 }
-
-$(function() {
-	$(".list > div:first-child").click(function() {
-		$(this).parent().children(".content").slideToggle();
-	});
-});
 
 
 
@@ -547,20 +532,20 @@ function on_text_keypress(e) {
 }
 
 
-
-$(function() {
-	$(window).mousedown(function(e) {
-		document.btn = e.button;
-		if(e.button==0 && document.edragged) return false;
-//		if(e.button==0 && !$(e.target).attr("contentEditable")) return false;
-	});
-	$(window).mousemove(function(e) {
-		if(document.edragged && typeof(document.lastX)!="undefined" && document.btn==0)
-			document.edragged.dragg(e.pageX-document.lastX, e.pageY-document.lastY);
-		document.lastX = e.pageX; document.lastY = e.pageY;
-	});
-	$(window).mouseup(function(e) { document.btn = -1; document.edragged = null;});
-});
+//
+// $(function() {
+// 	$(window).mousedown(function(e) {
+// 		document.btn = e.button;
+// 		if(e.button==0 && document.edragged) return false;
+// //		if(e.button==0 && !$(e.target).attr("contentEditable")) return false;
+// 	});
+// 	$(window).mousemove(function(e) {
+// 		if(document.edragged && typeof(document.lastX)!="undefined" && document.btn==0)
+// 			document.edragged.dragg(e.pageX-document.lastX, e.pageY-document.lastY);
+// 		document.lastX = e.pageX; document.lastY = e.pageY;
+// 	});
+// 	$(window).mouseup(function(e) { document.btn = -1; document.edragged = null;});
+// });
 
 
 
@@ -667,4 +652,35 @@ window.YesNoCancel = function(msg, cb) {
 	var win = remote.getCurrentWindow();
 	if(!win) throw "No BrowserWindow";
 	return dialog.showMessageBox(win, { buttons: ["Yes", "No", "Cancel"], message:msg }, cb);
+}
+
+//////////////
+// GEOMETRY //
+//////////////
+
+const lineRectCollision = require('ray-aabb-intersection');
+
+function intersectLineCircle(line, circle) {
+	var x1 = line.x1 - circle.x;
+	var y1 = line.y1 - circle.y;
+	var x2 = line.x2 - circle.x;
+	var y2 = line.y2 - circle.y;
+	var dx = x2-x1;
+	var dy = y2-y1;
+	var dr2 = dx*dx+dy*dy;
+	var D = x1*y2 - x2*y1;
+	var det = Math.sqrt(circle.r*circle.r*dr2-D*D);
+	return {
+		x: (D*dy+dx*det)/dr2 + circle.x,
+		y: (-D*dx+dy*det)/dr2 + circle.y
+	};
+}
+
+function intersectLineRect(line, rect) {
+	var pt = [0,0];
+	var v = [line.x2-line.x1,line.y2-line.y1];
+	var len = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
+	v[0]/=-len; v[1]/=-len;
+	if(lineRectCollision(pt, [line.x1,line.y1], v, [[rect.x, rect.y], [rect.x+rect.w,rect.y+rect.h]])) return {x:pt[0],y:pt[1]};
+	else return null;
 }

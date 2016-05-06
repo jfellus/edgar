@@ -31,11 +31,13 @@
 		visibility: hidden;
 	}
 
-	svg /deep/ rect.module {
+	svg /deep/ rect.module, svg /deep/ circle.module {
 		z-index:10;
 		stroke-width:1;
-		stroke:#666666;
-		fill:#DDDDDD;
+		stroke:#5588AA;
+		fill:#F1F8FE;
+		filter:url("#dropshadow");
+		vector-effect:non-scaling-stroke;
 	}
 
 	svg /deep/ text.module {
@@ -44,13 +46,14 @@
 
 	svg /deep/ rect.pin {
 		stroke:none;
-		fill:black;
+		fill:#335599;
 	}
 	svg /deep/ text.pin {
 		font-size:10px;
+		fill:#335599;
 	}
 
-	svg /deep/ path {
+	svg /deep/ path.link {
 		stroke-width:2;
 		stroke:black;
 		z-index:-11;
@@ -58,14 +61,35 @@
 		cursor:hand;
 		marker-end:url(#end-mark);
 	}
-	svg /deep/ path:hover {
+	svg /deep/ path.link:hover {
 		stroke-width:5;
 	}
 
 	svg /deep/ .selected rect.module,
+	svg /deep/ .selected circle.module,
+	svg /deep/ path.selected {
+		stroke:red;
+	}
+
+	svg /deep/ .selected rect.module,
+	svg /deep/ .selected circle.module {
+		stroke-width:2px;
+	}
+
 	svg /deep/ path.selected {
 		stroke-width:6;
-		stroke:red;
+	}
+
+	svg /deep/ .bezierHandle path {
+		stroke:#FF0000;
+		stroke-width:1;
+		vector-effect:non-scaling-stroke;
+	}
+	svg /deep/ .bezierHandle circle {
+		fill:white;
+		stroke:#FF0000;
+		stroke-width:1;
+		vector-effect:non-scaling-stroke;
 	}
 
 	marker#end-mark path { fill:black; }
@@ -77,9 +101,21 @@
 	<div id="loading">Loading ...</div>
 	<svg id="svg">
 		<defs>
-			<marker id="end-mark" viewBox="-100 -100 200 200"  markerWidth="8" markerHeight="8" orient='auto'>
-	 			 <--><path class='marker-path' d='M0,50 L100,0 L0,-50 Z'/>
-   			</marker>
+			<marker id="end-mark" markerWidth="7" markerHeight="6" orient="auto" refX="7" refY="3">
+    			<polygon points="0,0 7,3 0,6"/>    <!-- triangle pointing right -->
+  			</marker>
+  			<marker id="marker-square" markerWidth="10" markerHeight="10" refx="5" refy="5" orient="auto">
+        		<rect x="1" y="1" width="10" height="10" class="marker"/>
+      		</marker>
+			<filter xmlns="http://www.w3.org/2000/svg" id="dropshadow" height="130%">
+      			<feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+      			<feOffset dx="1.5" dy="1.5" result="offsetblur"/>
+				<feComponentTransfer><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      			<feMerge>
+        			<feMergeNode/>
+        			<feMergeNode in="SourceGraphic"/>
+      			</feMerge>
+    		</filter>
 		</defs>
 		<g id="world">
 			<g id="gLinks"></g>
@@ -128,7 +164,7 @@ Polymer({
 		});
 
 		$(this.$.svg).on("mousedown", function(evt){that.onMousedown(evt);});
-		$(this.$.svg).on("mouseup", function(evt){that.onMouseup(evt);});
+		$(this.$.svg).on("mouseup", function(evt){ that.onMouseup(evt); });
 
 		$(this.$.svg).on("mousemove", function(evt){
 			if(that.creator && that.creator.onMousemove(evt)) return;
@@ -366,6 +402,10 @@ Polymer({
 	////////////
 	// EVENTS //
 	////////////
+
+	preventClick: function() {
+		this._preventClick = true;
+	},
 
 	onMousemove: function(evt) {
 		this.mousePos = {x:evt.offsetX, y:evt.offsetY};

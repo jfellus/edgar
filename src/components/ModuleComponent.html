@@ -1,6 +1,6 @@
-<script src="../bower_components/d3/d3.min.js"></script>
+<script src="../node_modules/d3/d3.min.js"></script>
+<script src="../utils/utils.js"></script>
 <script>
-
 
 
 
@@ -12,14 +12,14 @@ function ModuleComponent(editor, m) {
 
 
 	/////////////// FAKE ////////////////////////:
-		m.pins = [
-				{ name:"VCC", side:"left" },
-				{ name:"Vin", side:"left"},
-				{ name:"OV", side:"left"},
-				{ name:"learn", side:"top"},
-				{ name:"RX", side:'right'},
-				{ name:"TX", side:"right"}
-			];
+		// m.pins = [
+		// 		{ name:"VCC", side:"left" },
+		// 		{ name:"Vin", side:"left"},
+		// 		{ name:"OV", side:"left"},
+		// 		{ name:"learn", side:"top"},
+		// 		{ name:"RX", side:'right'},
+		// 		{ name:"TX", side:"right"}
+		// 	];
 /////////////////////////////////
 
 
@@ -77,28 +77,48 @@ function ModuleComponent(editor, m) {
 }
 util.inherits(ModuleComponent, EventEmitter);
 
+ModuleComponent.prototype.getSrcAnchor = function(ptDst) {
+//	return intersectLineRect({x1:this.m.x, y1:this.m.y, x2:ptDst.x, y2:ptDst.y}, {x:this.m.x-this.w/2, y:this.m.y-this.h/2, w:this.w, h:this.h});
+	return intersectLineCircle({x1:this.m.x, y1:this.m.y, x2:ptDst.x, y2:ptDst.y}, {x:this.m.x, y:this.m.y, r:this.r});
+}
+
+ModuleComponent.prototype.getDstAnchor = function(ptSrc) {
+//	return intersectLineRect({x1:this.m.x, y1:this.m.y, x2:ptSrc.x, y2:ptSrc.y}, {x:this.m.x-this.w/2, y:this.m.y-this.h/2, w:this.w, h:this.h});
+return intersectLineCircle({x1:this.m.x, y1:this.m.y, x2:ptSrc.x, y2:ptSrc.y}, {x:this.m.x, y:this.m.y, r:this.r});
+}
 
 ModuleComponent.prototype._createComponent = function(m) {
-	var w = this.w = 85;
-	var h = this.h = 65;
-
+	var that = this;
 	var c = this.editor.gModules.append("g")
 		.attr("transform" , "translate(" + m.x+ "," +m.y + ")");
 
-	c.append("rect")
-		.classed("module", true)
-		.attr("x", -w/2)
-		.attr("y", -h/2)
-		.attr("rx", 3)
-		.attr("ry", 3)
-		.attr("width", w)
-		.attr("height", h);
+	function createRectModule() {
+		that.w = 85;
+		that.h = 65;
+		c.append("rect")
+			.classed("module", true)
+			.attr("x", -that.w/2)
+			.attr("y", -that.h/2)
+			.attr("width", that.w)
+			.attr("height", that.h);
+	}
+
+	function createCircleModule() {
+		that.r = 30;
+		that.w = 60;
+		that.h = 60;
+		c.append("circle")
+			.classed("module", true)
+			.attr("cx", 0).attr("cy", 0).attr("r", that.r);
+	}
+
+	createCircleModule();
 
 	c.append("text")
 		.classed("module", true)
 		.text(m.class + " " + m.id)
 		.attr('text-anchor',"middle")
-		.attr('y', h/2+2)
+		.attr('y', that.h/2+2)
 		.attr("dominant-baseline", "text-before-edge");
 
 	return c;

@@ -1,4 +1,4 @@
-<script src="../bower_components/d3/d3.min.js"></script>
+<script src="../node_modules/d3/d3.min.js"></script>
 <script>
 
 
@@ -13,6 +13,9 @@ function LinkComponent(editor, l) {
 	this.component = this._createComponent();
 	this.component.node().addEventListener("click", function(e) {
 		editor.select(l); e.stopPropagation();
+	});
+	this.component.node().addEventListener("dblclick", function(e) {
+		that.toggleBezier(); e.stopPropagation();
 	});
 
 	l.on('change', function(evt) {
@@ -31,6 +34,7 @@ util.inherits(LinkComponent, EventEmitter);
 
 LinkComponent.prototype.update = function() {
 	this.component.attr("d", this._createPath());
+	this.updateBezierHandles();
 }
 
 
@@ -63,6 +67,10 @@ LinkComponent.prototype.getSrcPoint = function() {
 	var srcPin = this.link.get("srcPin");
 	if(srcPin && ptSrc.pinCoords[srcPin]) ptSrc = ptSrc.pinCoords[srcPin];
 	if(!ptSrc || !ptSrc.x || !ptSrc.y) return null;
+	if(ptSrc.component && typeof ptSrc.component.getSrcAnchor === 'function') {
+		var anchor = ptSrc.component.getSrcAnchor(l.dst);
+		if(anchor) ptSrc = anchor;
+	}
 	return [ptSrc.x, ptSrc.y];
 }
 
@@ -72,20 +80,47 @@ LinkComponent.prototype.getDstPoint = function() {
 	var dstPin = this.link.get("dstPin");
 	if(dstPin && ptDst.pinCoords[dstPin]) ptDst = ptDst.pinCoords[dstPin];
 	if(!ptDst || !ptDst.x || !ptDst.y) return null;
+	if(ptDst.component && typeof ptDst.component.getDstAnchor === 'function') {
+		var anchor = ptDst.component.getDstAnchor(l.src);
+		if(anchor) ptDst = anchor;
+	}
 	return [ptDst.x, ptDst.y];
 }
 
+LinkComponent.prototype.isBezier = function() {
+	return this.link.get("bezierA") && this.link.get("bezierB");
+}
+
+LinkComponent.prototype.getBezierA = function() {
+	return this.link.get("bezierA");
+}
+
+LinkComponent.prototype.getBezierB = function() {
+	return this.link.get("bezierB");
+}
+
 LinkComponent.prototype._createPath = function() {
-	//	return "M"+[x1,y1]+" C"+[x2,y1,x1,y2,x2,y2];
-		return "M"+this.getSrcPoint()+ "L"+this.getDstPoint();
+	if(this.isBezier()) {
+		return "M"+this.getSrcPoint() +
+				" C" + 	ptAdd(this.getSrcPoint(),this.getBezierA()) + "," +
+						ptAdd(this.getDstPoint(),this.getBezierB()) + "," +
+						this.getDstPoint();
+	}
+ 	else {
+		var src = this.getSrcPoint();
+		var dst = this.getDstPoint();
+		if(!src || !dst) return "";
+		return "M"+src+ "L"+dst;
+	}
 }
 
 LinkComponent.prototype._createComponent = function() {
-	return this.editor.gLinks.append("path").attr("d", this._createPath());
+	return this.editor.gLinks.append("path").attr("d", this._createPath()).classed("link", true);
 }
 
 LinkComponent.prototype.setSelected = function(bSelected) {
 	this.component.classed("selected", bSelected);
+	this.showBezierHandles(bSelected);
 }
 
 LinkComponent.prototype.remove = function() {
@@ -104,5 +139,94 @@ LinkComponent.prototype.reattach = function() {
 	this.editor.notifyModify();
 }
 
+
+////////////
+// BEZIER //
+////////////
+
+LinkComponent.prototype.showBezierHandles = function(bShow) {
+	var that = this;
+	if(!this.isBezier()) bShow = false;
+	if(!this._bezierHandleA && bShow) {
+		this._bezierHandleA = this.editor.gLinks.append("g");
+		this._bezierHandleB = this.editor.gLinks.append("g");
+		[this._bezierHandleA, this._bezierHandleB].forEach(function(bh){
+			bh.classed("bezierHandle", true);
+			bh._the_line = bh.append("path");
+			bh._the_handle = bh.append("circle").attr("r", 4);
+			bh._the_handle.node().addEventListener("click", function(e) { e.stopPropagation(); });
+		});
+
+		var dragBehaviorA = d3.behavior.drag()
+		  .on("dragstart", function() { that._bezierHandleA._oldPos = {bezierA: that.getBezierA()}; })
+		  .on("dragend", function() { that.editor.addHistory(new CommandSet(that.editor, that.link, that._oldPos)); that.editor.preventClick(); })
+		  .on("drag", function() {
+				if(d3.event.sourceEvent.which !== 1 || d3.event.sourceEvent.shiftKey) return;
+				that.link.set("bezierA", ptAdd(that.getBezierA(), [d3.event.dx, d3.event.dy]));
+				that.update();
+		  });
+		this._bezierHandleA._the_handle.call(dragBehaviorA);
+
+		var dragBehaviorB = d3.behavior.drag()
+		  .on("dragstart", function() { that._bezierHandleB._oldPos = {bezierB: that.getBezierB()}; })
+		  .on("dragend", function() { that.editor.addHistory(new CommandSet(that.editor, that.link, that._oldPos)); that.editor.preventClick(); })
+		  .on("drag", function() {
+				if(d3.event.sourceEvent.which !== 1 || d3.event.sourceEvent.shiftKey) return;
+				that.link.set("bezierB", ptAdd(that.getBezierB(), [d3.event.dx, d3.event.dy]));
+				that.update();
+		  });
+		this._bezierHandleB._the_handle.call(dragBehaviorB);
+
+	}
+	if(bShow) this.updateBezierHandles();
+	if(this._bezierHandleA) {
+		this._bezierHandleA.style({opacity: bShow?1:0});
+		this._bezierHandleB.style({opacity: bShow?1:0});
+	}
+}
+
+LinkComponent.prototype.updateBezierHandles = function() {
+	if(!this.isBezier() || !this._bezierHandleA || !this._bezierHandleB) return;
+	var A = ptAdd(this.getSrcPoint(),this.getBezierA());
+	var B = ptAdd(this.getDstPoint(),this.getBezierB());
+	this._bezierHandleA._the_line.attr("d", "M"+this.getSrcPoint() + "L" + A);
+	this._bezierHandleA._the_handle.attr("cx", A[0]).attr("cy", A[1]);
+	this._bezierHandleB._the_line.attr("d", "M"+this.getDstPoint() + "L" + B);
+	this._bezierHandleB._the_handle.attr("cx", B[0]).attr("cy", B[1]);
+}
+
+LinkComponent.prototype.toggleBezier = function() {
+	if(!this.isBezier()) {
+		this.link.set("bezierA", ptSub(ptOnLine(this.getSrcPoint(), this.getDstPoint(), 0.25), this.getSrcPoint()));
+		this.link.set("bezierB", ptSub(ptOnLine(this.getSrcPoint(), this.getDstPoint(), 0.75), this.getDstPoint()));
+	} else {
+		this.link.unset("bezierA");
+		this.link.unset("bezierB");
+	}
+	this.update();
+	this.setSelected(true);
+}
+
+///////////
+// UTILS //
+///////////
+
+function ptAdd(A, B) {
+	if(typeof A === 'string') A = A.split(",");
+	if(typeof B === 'string') B = B.split(",");
+	return [parseFloat(A[0])+parseFloat(B[0]), parseFloat(A[1])+parseFloat(B[1])];
+}
+
+function ptSub(A, B) {
+	if(typeof A === 'string') A = A.split(",");
+	if(typeof B === 'string') B = B.split(",");
+	return [parseFloat(A[0])-parseFloat(B[0]), parseFloat(A[1])-parseFloat(B[1])];
+}
+
+function ptOnLine(A, B, location) {
+	if(typeof A === 'string') A = A.split(",");
+	if(typeof B === 'string') B = B.split(",");
+	return [(1-location)*parseFloat(A[0])+(location)*parseFloat(B[0]), (1-location)*parseFloat(A[1])+(location)*parseFloat(B[1])];
+}
 
 </script>

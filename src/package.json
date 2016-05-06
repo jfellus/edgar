@@ -26,6 +26,8 @@
     "electron-packager": "~7.0.1",
     "jquery": "*",
     "jquery-ui": "*",
-    "d3": "*"
+    "d3": "*",
+    "ray-vs-circle": "*",
+    "ray-aabb-intersection": "*"
   }
 }
