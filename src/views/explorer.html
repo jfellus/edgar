@@ -1,4 +1,5 @@
 <link rel="import" href="../ui/tree-view.html">
+<script src="../model/Project.js"></script>
 
 <dom-module id="view-explorer">
 <style>
@@ -17,39 +18,34 @@ Polymer({
 	},
 
 	attached: function() {
-		this.setProjects([
-			{name:"Project1", icon:"project.png", items:[
-				{name:"Resources", icon:"resources.png", items:[
-					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
-				]},
-				{name:"Main", icon:"script.png", items:[
-					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
-				]}
-			]},
 
-			{name:"Project1", icon:"project.png", items:[
-				{name:"Resources", icon:"resources.png", items:[
-					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
-				]},
-				{name:"Main", icon:"script.png", items:[
-					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
-				]}
-			]},
-
-			{name:"Project1", icon:"project.png", items:[
-				{name:"Resources", icon:"resources.png", items:[
-					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
-				]},
-				{name:"Main", icon:"script.png", items:[
-					{name:"Script1", icon:"script.png"}, {name:"Script2", icon:"script.png"}, {name:"Script3", icon:"script.png"}
-				]}
-			]}
-		]);
 	},
 
-	setProjects: function(p) {
-		this.set("projects", p);
+	addProject: function(p) {
+		var that = this;
+		function createProjectView(p) {
+			return {
+				project:p,
+				name:p.name, icon:"folder.png", items:[
+					{name:"Libraries", icon:"library.png", items:p.libs},
+					{name:"src", icon:"folder.png", items:p.scripts}
+				]
+			};
+		}
+
+		this.push('projects',  createProjectView(p));
+		p.on("change", function(){
+			that.set("projects", that.projects.map(function(pp){
+				if(p!=pp.project) return pp;
+				return createProjectView(p);
+			}));
+		});
+	},
+
+	removeProject: function(p) {
+		this.set("projects", this.projects.filter(function(pp) {return pp.project != p;}));
 	}
+
 });
 
 

@@ -36,7 +36,7 @@
 	<ul id="list">
 		<template id='categories' is="dom-repeat" as="cat" items='{{categories}}' filter="filterCategories">
 			<li>
-				<div class="category" on-tap="onOpenCategory"><img src="../resources/icons/project.png"> {{cat.name}}</div>
+				<div class="category" on-tap="onOpenCategory"><img src="../resources/icons/folder.png"> {{cat.name}}</div>
 				<div class="modules">
 				<table cellspacing=0 cellpadding=0 border=0>
 					<template class='list' is="dom-repeat" items='{{cat.modules}}' filter="filterModules" observe="cat.modules filter">
@@ -92,7 +92,7 @@ Polymer({
 	},
 
 	onOpenCategory: function(evt) {
-		$(evt.target).next().slideToggle();
+		$(evt.target).next().slideToggle(200);
 	},
 
 	onFilterChange: function() {

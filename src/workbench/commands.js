@@ -1,5 +1,13 @@
 Commands = {};
 
+Commands.NewProject = function() {
+	WORKBENCH.newProject();
+};
+
+Commands.OpenProject = function() {
+	// TODO
+};
+
 Commands.New = function() {
 	WORKBENCH.openEditor();
 };
