@@ -67,11 +67,21 @@ LinkComponent.prototype.getSrcPoint = function() {
 	var srcPin = this.link.get("srcPin");
 	if(srcPin && ptSrc.pinCoords[srcPin]) ptSrc = ptSrc.pinCoords[srcPin];
 	if(!ptSrc || !ptSrc.x || !ptSrc.y) return null;
+	ptSrc = this.getSrcAnchorPoint(ptSrc);
+	return [ptSrc.x, ptSrc.y];
+}
+
+LinkComponent.prototype.getSrcAnchorPoint = function(ptSrc) {
 	if(ptSrc.component && typeof ptSrc.component.getSrcAnchor === 'function') {
-		var anchor = ptSrc.component.getSrcAnchor(l.dst);
+		var ptDst = this.link.dst;
+		if(this.isBezier()) {
+			var _ptBezierA = ptAdd([ptSrc.x,ptSrc.y],ptScale(this.getBezierA(), 10));
+			ptDst = {x:_ptBezierA[0], y:_ptBezierA[1]};
+		}
+		var anchor = ptSrc.component.getSrcAnchor(ptDst);
 		if(anchor) ptSrc = anchor;
 	}
-	return [ptSrc.x, ptSrc.y];
+	return ptSrc;
 }
 
 LinkComponent.prototype.getDstPoint = function() {
@@ -80,11 +90,21 @@ LinkComponent.prototype.getDstPoint = function() {
 	var dstPin = this.link.get("dstPin");
 	if(dstPin && ptDst.pinCoords[dstPin]) ptDst = ptDst.pinCoords[dstPin];
 	if(!ptDst || !ptDst.x || !ptDst.y) return null;
+	ptDst = this.getDstAnchorPoint(ptDst);
+	return [ptDst.x, ptDst.y];
+}
+
+LinkComponent.prototype.getDstAnchorPoint = function(ptDst) {
 	if(ptDst.component && typeof ptDst.component.getDstAnchor === 'function') {
-		var anchor = ptDst.component.getDstAnchor(l.src);
+		var ptSrc = this.link.src;
+		if(this.isBezier()) {
+			var _ptBezierB = ptAdd([ptDst.x,ptDst.y],ptScale(this.getBezierB(), 10));
+			ptSrc = {x:_ptBezierB[0], y:_ptBezierB[1]};
+		}
+		var anchor = ptDst.component.getDstAnchor(ptSrc);
 		if(anchor) ptDst = anchor;
 	}
-	return [ptDst.x, ptDst.y];
+	return ptDst;
 }
 
 LinkComponent.prototype.isBezier = function() {
@@ -207,6 +227,12 @@ LinkComponent.prototype.toggleBezier = function() {
 	this.setSelected(true);
 }
 
+LinkComponent.prototype.createSelfLoopBezier = function() {
+	this.link.set("bezierA", [100,0]);
+	this.link.set("bezierB", [0,-100]);
+	this.update();
+}
+
 ///////////
 // UTILS //
 ///////////
@@ -221,6 +247,11 @@ function ptSub(A, B) {
 	if(typeof A === 'string') A = A.split(",");
 	if(typeof B === 'string') B = B.split(",");
 	return [parseFloat(A[0])-parseFloat(B[0]), parseFloat(A[1])-parseFloat(B[1])];
+}
+
+function ptScale(A, scale) {
+	if(typeof A === 'string') A = A.split(",");
+	return [parseFloat(A[0])*parseFloat(scale), parseFloat(A[1])*parseFloat(scale)];
 }
 
 function ptOnLine(A, B, location) {

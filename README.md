@@ -3,7 +3,14 @@
 
 ## Building from source
 
-From your command line, just type
+1. Checkout pgcc in edgar's parent directory
+```bash
+git clone git@github.com:jfellus/pgccjs.git
+ls
+# Should display : pgcc/ edgar/
+```
+
+2. Then go into edgar/ and type
 
 ```bash
 make

@@ -38,13 +38,16 @@ LinkCreator.prototype.onClick = function(e) {
 		if(e.pin) this.link.set("dstPin", e.pin);
 		this.create();
 	}
+	return true;
 }
 
 LinkCreator.prototype.create = function() {
 	this.spot.remove();
 	this.component.attr("d", this._createPath());
+	if(this.link.dst === this.link.src) this.createSelfLoopBezier();
 	if(this.editor.creator === this)  this.editor.creator = null;
 	this.editor.addHistory(new CommandCreate(this.editor, this.link));
+	this.editor.select(this.link);
 }
 
 LinkCreator.prototype.cancel = function() {
