@@ -5,7 +5,14 @@ var EventEmitter = require("events").EventEmitter;
 function Project(filename) {
 	if(filename) this.load(filename);
 	this.name = this.filename;
-	if(!this.name) this.name = "NewProject";
+	if(!this.name) {
+		var name = this.name = "NewProject";
+		for(var i=0; WORKBENCH.getProject(name)!==null && WORKBENCH.getProject(name)!==this; i++) {
+			console.log(i);
+			name = this.name + "_" + i;
+		}
+		this.name = name;
+	}
 
 	this.libs = [];
 	this.scripts = [];

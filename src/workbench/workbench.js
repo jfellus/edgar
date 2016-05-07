@@ -86,7 +86,10 @@ Polymer({
 
 
 		if(file) Commands.Open(file);
-		else Commands.NewProject();
+		else {
+			Commands.NewProject();
+			Commands.NewProject();
+		}
   	},
 
 
@@ -148,6 +151,12 @@ Polymer({
 		EXPLORER.removeProject(p);
 		this.set("projects", this.projects.filter(function(pp){return pp!=p;}));
 		if(p===this.curProject) this.curProject = null;
+	},
+
+	getProject: function(name) {
+		var p = this.projects.filter(function(p) {return p.name === name; });
+		if(p[0]) return p[0];
+		return null;
 	},
 
 	////////////
