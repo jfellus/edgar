@@ -6,7 +6,7 @@
 	:host { width:100%; height:100%; overflow-y: auto; }
 </style>
 <template>
-	<tree-view items="{{projects}}"></tree-view>
+	<tree-view id="tree" items="{{projects}}"></tree-view>
 </template>
 </dom-module>
 <script>
@@ -18,7 +18,6 @@ Polymer({
 	},
 
 	attached: function() {
-
 	},
 
 	addProject: function(p) {
@@ -29,7 +28,10 @@ Polymer({
 				name:p.name, icon:"folder.png", items:[
 					{name:"Libraries", icon:"library.png", items:p.libs},
 					{name:"src", icon:"folder.png", items:p.scripts}
-				]
+				],
+				clickHandler:function(evt) {
+					WORKBENCH.curProject = p;
+				}
 			};
 		}
 

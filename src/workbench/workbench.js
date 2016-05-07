@@ -165,7 +165,9 @@ Polymer({
 	},
 
 	onCurProjectChanged: function() {
-
+		WINDOW.setTitle("Edgar"
+		  + (this.curProject ? (" - " + this.curProject.name) : "")
+		  + (this.curEditor ? (" - " + this.curEditor.filename) : ""));
 	}
 
 

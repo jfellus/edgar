@@ -29,14 +29,14 @@ ul {
 }
 </style>
 <template>
-	<li><div on-click="onClick">
+	<li on-click="onParentClick"><div on-click="onClick">
 		<template is="dom-if" if="{{icon}}">
 			<img src$='{{computeIcon(icon)}}'>
 		</template>{{name}}</div>
 		<ul id="details">
 			<template is="dom-repeat" items={{items}}>
 				<template is="dom-if" if={{item.items}}>
-					<tree-item name="{{item.name}}" items="{{item.items}}" icon="{{item.icon}}">
+					<tree-item name="{{item.name}}" items="{{item.items}}" icon="{{item.icon}}" click-handler="{{item.clickHandler}}">
 					</tree-item>
 				</template>
 				<template is="dom-if" if={{!item.items}}>
@@ -70,6 +70,10 @@ Polymer({
 		this.toggleClass("open");
 	},
 
+	onParentClick: function(evt) {
+		if(typeof this.clickHandler === 'function') this.clickHandler(evt);
+	},
+
 	computeIcon: function(icon) {
 		return "./resources/icons/"+ icon;
 	}
@@ -87,7 +91,7 @@ Polymer({
 <template>
 	<ul>
 		<template is="dom-repeat" items="{{items}}">
-			<tree-item name="{{item.name}}" items="{{item.items}}" icon="{{item.icon}}"></tree-item>
+			<tree-item name="{{item.name}}" items="{{item.items}}" icon="{{item.icon}}" click-handler={{item.clickHandler}}></tree-item>
 		</template>
 	</ul>
 </template>
