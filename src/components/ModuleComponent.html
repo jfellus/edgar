@@ -26,7 +26,7 @@ function ModuleComponent(editor, m) {
 	m.component = this;
 	m.pinCoords = {};
 
-	this.renderer = m.id[0]==='f' ? new RectModuleRenderer(this) : new CircleModuleRenderer(this);
+	this.renderer = m.id[0]==='f' ? new ImageModuleRenderer(this) : new CircleModuleRenderer(this);
 
 	if(!m.x) m.x = parseFloat(m.params.x);
 	if(!m.y) m.y = parseFloat(m.params.y);

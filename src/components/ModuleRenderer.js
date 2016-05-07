@@ -71,3 +71,35 @@ CircleModuleRenderer.prototype.getDstAnchor = function(ptSrc) {
 	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
 	return pt;
 }
+
+
+///////////////////////////
+// IMAGE MODULE RENDERER //
+///////////////////////////
+
+function ImageModuleRenderer(component) {
+	ModuleRenderer.call(this, component);
+}
+util.inherits(ImageModuleRenderer, ModuleRenderer);
+
+ImageModuleRenderer.prototype.createElement = function(parent) {
+	this.component.w = 100;
+	this.component.h = 100;
+	parent.append("svg:image")
+		.attr("xlink:href", "./resources/module.png")
+		.classed("module", true)
+		.attr("x", -this.component.w/2).attr("y", -this.component.h/2)
+		.attr("width", 100).attr("height", 100);
+}
+
+ImageModuleRenderer.prototype.getSrcAnchor = function(ptDst) {
+	var pt = intersectLineRect({x1:this.component.m.x, y1:this.component.m.y, x2:ptDst.x, y2:ptDst.y}, {x:this.component.m.x-this.component.w/2, y:this.component.m.y-this.component.h/2, w:this.component.w, h:this.component.h});
+	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
+	return pt;
+}
+
+ImageModuleRenderer.prototype.getDstAnchor = function(ptSrc) {
+	var pt = intersectLineRect({x1:this.component.m.x, y1:this.component.m.y, x2:ptSrc.x, y2:ptSrc.y}, {x:this.component.m.x-this.component.w/2, y:this.component.m.y-this.component.h/2, w:this.component.w, h:this.component.h});
+	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
+	return pt;
+}
