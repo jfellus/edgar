@@ -1,7 +1,11 @@
+<script>
+	const childProcess = require("child_process");
+</script>
+
 
 <dom-module id="view-creator">
 <style>
-	:host { position:absolute; left:0;top:0;bottom:0;right:0; padding:0; margin:0;}
+	:host { position:absolute; left:0;top:0;bottom:0;right:0; padding:0; margin:0; background: white; }
 	:host > table { position:absolute; left:0; top:0; bottom:0; right:0;}
 	td.list {  position:relative; }
 	td.list > div { position:absolute; left:0; top:0; bottom:0; right:0; overflow:auto; }
@@ -52,7 +56,6 @@
 </dom-module>
 <script>
 
-
 Polymer({
 	is: 'view-creator',
 	properties: {
@@ -76,13 +79,21 @@ Polymer({
 	},
 
 	load: function() {
-		this.addModule({name:"f_affiche_image_from_extension", category:"Promethe"});
-		this.addModule({name:"f_perception", category:"Promethe"});
-		this.addModule({name:"f_ptcg", category:"Promethe"});
-		this.addModule({name:"f_gauss", category:"Promethe"});
-		this.addModule({name:"mat_test", category:"OpenCV"});
-		this.addModule({name:"sift", category:"OpenCV"});
-		this.addModule({name:"hough", category:"OpenCV"});
+		var that = this;
+		var declaredModules = childProcess.execSync("pgcc -l").toString().split("\n").map(function(m) {
+			var params = m.split(" ");
+			return {
+				language: params[0],
+				src: params[1],
+				line: params[2],
+				ret: params[3],
+				name: params[4],
+				args: params[5]
+			};
+		});
+		declaredModules.forEach(function(m){
+			that.addModule({name:m.name, category:m.language});
+		});
 	},
 
 	onClick: function(evt) {
