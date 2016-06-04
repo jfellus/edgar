@@ -55,6 +55,7 @@ Commands.Quit = function(bForce) {
 };
 
 Commands.CreateModule = function(hint) {
+	WORKBENCH.setModeDesign(false);
 	if(!hint) hint = WORKBENCH._createModule_last_hint;
 	WORKBENCH._createModule_last_hint = hint;
 	if(!hint || !WORKBENCH.curEditor) return;
@@ -62,6 +63,7 @@ Commands.CreateModule = function(hint) {
 };
 
 Commands.CreateLink = function(hint) {
+	WORKBENCH.setModeDesign(false);
 	if(!hint) hint = WORKBENCH._createLink_last_link_hint;
 	WORKBENCH._createLink_last_link_hint = hint;
 	if(!WORKBENCH.curEditor) return;
@@ -89,3 +91,7 @@ Commands.panUp = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panUp(
 Commands.panDown = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panDown(); }
 Commands.panRight = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panRight(); }
 Commands.panLeft = function() { if(WORKBENCH.curEditor) WORKBENCH.curEditor.panLeft(); }
+
+Commands.toggleModeDesign = function() {
+	WORKBENCH.setModeDesign(!WORKBENCH.isModeDesign());
+}

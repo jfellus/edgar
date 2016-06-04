@@ -69,6 +69,7 @@ Polymer({
 		WORKBENCH.bindKeyshortcut("ctrl+RIGHT", "panRight");
 		WORKBENCH.bindKeyshortcut("ctrl+UP", "panUp");
 		WORKBENCH.bindKeyshortcut("ctrl+DOWN", "panDown");
+		WORKBENCH.bindKeyshortcut("ctrl+E", "toggleModeDesign");
 	},
 
 	 run: function() {
@@ -96,6 +97,13 @@ Polymer({
 		var f = Commands[id];
 		if(typeof(f) === 'function') f();
 	},
+
+	////////////////
+	// EDIT MODES //
+	////////////////
+
+	isModeDesign: function() { return this._modeDesign; },
+	setModeDesign: function(b) { return this._modeDesign = b===undefined ? true : b; },
 
 	///////////
 	// VIEWS //

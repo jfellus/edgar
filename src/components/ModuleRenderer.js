@@ -77,8 +77,9 @@ CircleModuleRenderer.prototype.getDstAnchor = function(ptSrc) {
 // IMAGE MODULE RENDERER //
 ///////////////////////////
 
-function ImageModuleRenderer(component) {
+function ImageModuleRenderer(component, svg) {
 	ModuleRenderer.call(this, component);
+	this.svg = svg;
 }
 util.inherits(ImageModuleRenderer, ModuleRenderer);
 
@@ -86,7 +87,7 @@ ImageModuleRenderer.prototype.createElement = function(parent) {
 	this.component.w = 100;
 	this.component.h = 100;
 	parent.append("svg:image")
-		.attr("xlink:href", "./resources/module.png")
+		.attr("xlink:href", this.svg)
 		.classed("module", true)
 		.attr("x", -this.component.w/2).attr("y", -this.component.h/2)
 		.attr("width", 100).attr("height", 100);

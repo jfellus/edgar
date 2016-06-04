@@ -19,6 +19,7 @@ module.exports = [
 		{label: '&Paste', accelerator: 'Ctrl+V', role:'paste'},
 		{type: 'separator'},
 		{label: '&Delete', accelerator: 'Ctrl+D', role:'delete'},
+		{label: '&Design Mode', accelerator: 'Ctrl+E', role:'toggleModeDesign'},
 	]},
 
 	{label: '&View', submenu: [

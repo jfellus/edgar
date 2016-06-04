@@ -81,19 +81,18 @@ Polymer({
 	load: function() {
 		var that = this;
 		var declaredModules = childProcess.execSync("pgcc -l").toString().split("\n").map(function(m) {
-			var params = m.split(" ");
+			var params = m.split(" | ");
 			return {
-				language: params[0],
+				name: params[0],
 				src: params[1],
-				line: params[2],
-				ret: params[3],
-				name: params[4],
-				args: params[5]
+				category: params[2],
+				line: params[3],
+				lang: params[4],
+				ret: params[5],
+				signature: params[6]
 			};
 		});
-		declaredModules.forEach(function(m){
-			that.addModule({name:m.name, category:m.language});
-		});
+		declaredModules.forEach(function(m){that.addModule(m);});
 	},
 
 	onClick: function(evt) {

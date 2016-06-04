@@ -4,20 +4,13 @@
 <script>
 
 
+function lookup_module_svg(cls) {
+	try { return require('child_process').execSync("ls ~/.pgcc/svg/"+cls+".svg" + " 2>/dev/null"); }
+	catch(e) {return null; }
+}
+
 
 function ModuleComponent(editor, m) {
-
-		/////////////// FAKE ////////////////////////:
-			// m.pins = [
-			// 		{ name:"VCC", side:"left" },
-			// 		{ name:"Vin", side:"left"},
-			// 		{ name:"OV", side:"left"},
-			// 		{ name:"learn", side:"top"},
-			// 		{ name:"RX", side:'right'},
-			// 		{ name:"TX", side:"right"}
-			// 	];
-	/////////////////////////////////
-
 
 	var that = this;
 	this.editor = editor;
@@ -26,7 +19,8 @@ function ModuleComponent(editor, m) {
 	m.component = this;
 	m.pinCoords = {};
 
-	this.renderer = m.id[0]==='f' ? new ImageModuleRenderer(this) : new CircleModuleRenderer(this);
+	var svg = lookup_module_svg(m.class);
+	this.renderer = svg ? new ImageModuleRenderer(this, svg) : new CircleModuleRenderer(this);
 
 	if(!m.x) m.x = parseFloat(m.params.x);
 	if(!m.y) m.y = parseFloat(m.params.y);
@@ -57,11 +51,9 @@ function ModuleComponent(editor, m) {
 	  });
 	this.component.call(dragBehavior);
 
-
-
-	if(m.pins) {
-		["left", "right", "top", "bottom"].forEach(function(side){
-			var pins = m.pins.filter(function(p){return p.side === side; });
+	if(m.getPins()) {
+		["left", "right", "top", "bottom", null].forEach(function(side){
+			var pins = m.pins.filter(function(p){return p.side == side; });
 			for(var i=0; i<pins.length; i++) {
 				that.addPin(pins[i].name, side, (i+1)/(pins.length+1));
 			}
@@ -110,6 +102,8 @@ ModuleComponent.prototype.addPin = function(name, side, pct) {
 	var h = this.h;
 	var x,y;
 	var MARG = 1;
+
+	if(!side) side = "left";
 	if(side=="left") { x = -w/2; y = (pct-0.5)*MARG*h; }
 	else if(side=="right") { x = w/2; y = (pct-0.5)*MARG*h; }
 	else if(side=="top") { x = (pct-0.5)*MARG*w; y = -h/2; }
@@ -125,13 +119,33 @@ ModuleComponent.prototype.addPin = function(name, side, pct) {
 		.attr("width", 5)
 		.attr("height", 5);
 
-	this.component.append("text")
+	var text = this.component.append("text")
 		.classed("pin", true)
-		.attr("x", side==="top" || side==="bottom" ? x : side==="left" ? x + 3 : x - 3)
-		.attr("y", side==="left" || side==="right" ? y : side==="top" ? y + 3 : y - 3)
-		.attr("dominant-baseline", side==="left" || side==="right" ? "central" : side==="top" ?  "text-before-edge" : "text-after-edge" )
-		.attr("text-anchor", side==="top" || side==="bottom" ? "middle" : side==="left" ? "start" : "end")
 		.text(name);
+
+	function updateTextAnchor(x,y,side) {
+		text.attr("x", side==="top" || side==="bottom" ? x : side==="left" ? x + 3 : x - 3)
+			.attr("y", side==="left" || side==="right" ? y : side==="top" ? y + 3 : y - 3)
+			.attr("dominant-baseline", side==="left" || side==="right" ? "central" : side==="top" ?  "text-before-edge" : "text-after-edge" )
+			.attr("text-anchor", side==="top" || side==="bottom" ? "middle" : side==="left" ? "start" : "end");
+	}
+	updateTextAnchor(x,y,side);
+
+	function movePin(dx,dy) {
+		that.m.pinCoords[name].relX += d3.event.dx;
+		that.m.pinCoords[name].relY += d3.event.dy;
+		that.m.pinCoords[name].x += d3.event.dx;
+		that.m.pinCoords[name].y += d3.event.dy;
+		pin.attr("x", parseFloat(pin.attr('x')) + d3.event.dx);
+		pin.attr("y", parseFloat(pin.attr('y')) + d3.event.dy);
+		text.attr("x", parseFloat(text.attr('x')) + d3.event.dx);
+		text.attr("y", parseFloat(text.attr('y')) + d3.event.dy);
+		x += d3.event.dx; y += d3.event.dy;
+		side = x<2 ? 'left' : 'right';
+		if(y+h/2<h*0.1) side = 'top';
+		if(y+h/2>h*0.9) side = 'bottom';
+		updateTextAnchor(x,y,side);
+	}
 
 	var ctm = pin.node().getCTM();
 	this.m.pinCoords[name] = {x:ctm.e+x,y:ctm.f+y, relX:x, relY:y};
@@ -145,6 +159,21 @@ ModuleComponent.prototype.addPin = function(name, side, pct) {
 		that.editor.select(that.m, e.shiftKey);
 	});
 
+	var dragBehavior = d3.behavior.drag()
+	.on("dragstart", function() {
+		if(WORKBENCH.isModeDesign()) d3.event.sourceEvent.stopPropagation();
+	})
+	.on("dragend", function() {
+		if(WORKBENCH.isModeDesign()) d3.event.sourceEvent.stopPropagation();
+	})
+	.on("drag", function() {
+		if(!WORKBENCH.isModeDesign()) return;
+		if(d3.event.sourceEvent.which !== 1 || d3.event.sourceEvent.shiftKey) return;
+		d3.event.sourceEvent.stopPropagation();
+		movePin(d3.event.dx, d3.event.dy);
+		that._preventClick = true;
+	});
+	pin.call(dragBehavior);
 }
 
 
