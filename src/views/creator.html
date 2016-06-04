@@ -15,8 +15,8 @@
 
 	#list { font-size:12px; }
 
-	#list table { width:100%; height:auto; padding:0; margin:0;}
-	#list td { padding: 4px 10px; cursor:pointer; }
+	#list table { width:100%; height:auto; padding:0; margin:0; margin-left:15px;}
+	#list td { padding: 4px 3px; cursor:pointer; }
 	#list td:first-child { width:0px; }
 	.category {
 		display:flex; flex-direction: row; align-items: center; align-content: center; justify-content: flex-start;
@@ -32,6 +32,9 @@
 		background:url("../resources/icons/find.png") no-repeat white 2px 3px;
 	}
 	#search { background:#eeeeee; border-bottom:1px solid #cccccc; padding:5px;}
+
+	img.icon { width:auto; height:28px; max-width:28px;}
+	.lang { font-size:10px; color:#555555; }
 </style>
 <template>
 	<table><tr><td id="search">
@@ -44,7 +47,10 @@
 				<div class="modules">
 				<table cellspacing=0 cellpadding=0 border=0>
 					<template class='list' is="dom-repeat" items='{{cat.modules}}' filter="filterModules" observe="cat.modules filter">
-						<tr on-tap="onClick"><td width="1%">ICON</td><td width='100%' class="name">{{item.name}}</td></tr>
+						<tr on-tap="onClick">
+							<td width="1%"><img class='icon' src='{{lookupSvg(item.name)}}'></td>
+							<td width='100%' class="name">{{item.name}}<br><span class="lang" width="1%">{{item.lang}}</span></td>
+						</tr>
 					</template>
 				</table>
 				</div>
@@ -82,17 +88,18 @@ Polymer({
 		var that = this;
 		var declaredModules = childProcess.execSync("pgcc -l").toString().split("\n").map(function(m) {
 			var params = m.split(" | ");
+			if(params.length<4) return null;
 			return {
 				name: params[0],
 				src: params[1],
-				category: params[2],
+				category: params[2].replace(".pgso", ""),
 				line: params[3],
 				lang: params[4],
 				ret: params[5],
 				signature: params[6]
 			};
 		});
-		declaredModules.forEach(function(m){that.addModule(m);});
+		declaredModules.forEach(function(m){if(m) that.addModule(m);});
 	},
 
 	onClick: function(evt) {
@@ -117,6 +124,10 @@ Polymer({
 
 	filterModules: function(item) {
 		return !this.filter || item.name.indexOf(this.filter)!==-1;
+	},
+
+	lookupSvg: function(moduleClass) {
+		return lookup_module_svg(moduleClass) || "./resources/icons/Module.svg";
 	}
 
 
