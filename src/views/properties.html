@@ -53,6 +53,13 @@ Polymer({
 			if(!params) params = selection;
 			var p = [];
 			for(var i in params) p.push({key:i, value:params[i]});
+
+			// Add module core params
+			if(selection.class) {
+				p.push({key:'type', value:selection.class});
+				p.push({key:'name', value:selection.id});
+			}
+
 			return p;
 		} catch(e) { return [];}
 	},
@@ -110,6 +117,8 @@ Polymer({
 	},
 
 	validate: function(property, value) {
+		if(property === 'dst' && !WORKBENCH.curEditor.hasModule(value)) return false;
+		if(property === 'src' && !WORKBENCH.curEditor.hasModule(value)) return false;
 		return true;
 	},
 

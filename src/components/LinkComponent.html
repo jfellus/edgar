@@ -39,25 +39,25 @@ LinkComponent.prototype.update = function() {
 
 
 LinkComponent.prototype.onSetSrc = function(src) {
-	var that = this;
-
-	if(this.srcComponent) {
-		this.srcComponent.off("move", this.update.bind(this));
-	}
+	if(this.srcComponent) {	/* TODO : Remove listeners for move and so on... */ }
 
 	this.srcComponent = this.link.src ? this.link.src.component : null;
-	if(this.srcComponent) this.srcComponent.on("move", this.update.bind(this));
+	if(this.srcComponent) {
+		this.srcComponent.on("move", this.update.bind(this));
+		if(this.srcComponent === this.dstComponent) this.createSelfLoopBezier();
+	}
+	this.update();
 }
 
 LinkComponent.prototype.onSetDst = function(dst) {
-	var that = this;
-
-	if(this.dstComponent) {
-		this.dstComponent.off("move", this.update.bind(this));
-	}
+	if(this.dstComponent) {	/* TODO : Remove listeners for move and so on... */ }
 
 	this.dstComponent = this.link.dst ? this.link.dst.component : null;
-	if(this.dstComponent) this.dstComponent.on("move", this.update.bind(this));
+	if(this.dstComponent) {
+		this.dstComponent.on("move", this.update.bind(this));
+		if(this.srcComponent === this.dstComponent) this.createSelfLoopBezier();
+	}
+	this.update();
 }
 
 
@@ -95,15 +95,16 @@ LinkComponent.prototype.getDstPoint = function() {
 }
 
 LinkComponent.prototype.getDstAnchorPoint = function(ptDst) {
+	var ptSrc = this.link.src;
+	if(this.isBezier()) {
+		var _ptBezierB = ptAdd([ptDst.x,ptDst.y],ptScale(this.getBezierB(), 10));
+		ptSrc = {x:_ptBezierB[0], y:_ptBezierB[1]};
+	}
 	if(ptDst.component && typeof ptDst.component.getDstAnchor === 'function') {
-		var ptSrc = this.link.src;
-		if(this.isBezier()) {
-			var _ptBezierB = ptAdd([ptDst.x,ptDst.y],ptScale(this.getBezierB(), 10));
-			ptSrc = {x:_ptBezierB[0], y:_ptBezierB[1]};
-		}
 		var anchor = ptDst.component.getDstAnchor(ptSrc);
 		if(anchor) ptDst = anchor;
 	}
+	else ptDst = ptToXY(ptAdd(ptCast(ptDst), ptScale(ptNormalize(ptSub(ptCast(ptDst), [ptSrc.x, ptSrc.y])),-5))) // Move slightly outward to fit in arrow end
 	return ptDst;
 }
 
@@ -237,6 +238,18 @@ LinkComponent.prototype.createSelfLoopBezier = function() {
 // UTILS //
 ///////////
 
+
+function ptCast(A) {
+	if(typeof A === 'string') return A.split(",");
+	if(A.x && A.y) return [A.x, A.y];
+	else return A;
+}
+
+function ptToXY(A) {
+	if(typeof A === 'string') A = A.split(",");
+	return {x:parseFloat(A[0]), y:parseFloat(A[1])};
+}
+
 function ptAdd(A, B) {
 	if(typeof A === 'string') A = A.split(",");
 	if(typeof B === 'string') B = B.split(",");
@@ -252,6 +265,17 @@ function ptSub(A, B) {
 function ptScale(A, scale) {
 	if(typeof A === 'string') A = A.split(",");
 	return [parseFloat(A[0])*parseFloat(scale), parseFloat(A[1])*parseFloat(scale)];
+}
+
+function ptLength(A) {
+	if(typeof A === 'string') A = A.split(",");
+	var x = parseFloat(A[0]);
+	var y = parseFloat(A[1]);
+	return Math.sqrt((x*x)+(y*y));
+}
+
+function ptNormalize(A) {
+	return ptScale(A, 1.0/ptLength(A));
 }
 
 function ptOnLine(A, B, location) {

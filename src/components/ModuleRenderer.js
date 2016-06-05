@@ -30,15 +30,18 @@ RectModuleRenderer.prototype.createElement = function(parent) {
 }
 
 RectModuleRenderer.prototype.getSrcAnchor = function(ptDst) {
+	if(!ptDst) return this.component.m;
 	var pt = intersectLineRect({x1:this.component.m.x, y1:this.component.m.y, x2:ptDst.x, y2:ptDst.y}, {x:this.component.m.x-this.component.w/2, y:this.component.m.y-this.component.h/2, w:this.component.w, h:this.component.h});
 	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
 	return pt;
 }
 
 RectModuleRenderer.prototype.getDstAnchor = function(ptSrc) {
+	if(!ptSrc) return this.component.m;
 	var pt = intersectLineRect({x1:this.component.m.x, y1:this.component.m.y, x2:ptSrc.x, y2:ptSrc.y}, {x:this.component.m.x-this.component.w/2, y:this.component.m.y-this.component.h/2, w:this.component.w, h:this.component.h});
 	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
-	return pt;
+	pt = ptAdd(ptCast(pt), ptScale(ptNormalize(ptSub(ptCast(pt), [this.component.m.x, this.component.m.y])),7)) // Move slightly outward to fit in arrow end
+	return {x:pt[0],y:pt[1]};
 }
 
 
@@ -61,15 +64,18 @@ CircleModuleRenderer.prototype.createElement = function(parent) {
 }
 
 CircleModuleRenderer.prototype.getSrcAnchor = function(ptDst) {
+	if(!ptDst) return this.component.m;
 	var pt = intersectLineCircle({x1:this.component.m.x, y1:this.component.m.y, x2:ptDst.x, y2:ptDst.y}, {x:this.component.m.x, y:this.component.m.y, r:this.component.r});
 	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
 	return pt;
 }
 
 CircleModuleRenderer.prototype.getDstAnchor = function(ptSrc) {
+	if(!ptSrc) return this.component.m;
 	var pt = intersectLineCircle({x1:this.component.m.x, y1:this.component.m.y, x2:ptSrc.x, y2:ptSrc.y}, {x:this.component.m.x, y:this.component.m.y, r:this.component.r});
 	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
-	return pt;
+	pt = ptAdd(ptCast(pt), ptScale(ptNormalize(ptSub(ptCast(pt), [this.component.m.x, this.component.m.y])),7)) // Move slightly outward to fit in arrow end
+	return {x:pt[0],y:pt[1]};
 }
 
 
@@ -94,13 +100,16 @@ ImageModuleRenderer.prototype.createElement = function(parent) {
 }
 
 ImageModuleRenderer.prototype.getSrcAnchor = function(ptDst) {
+	if(!ptDst) return this.component.m;
 	var pt = intersectLineRect({x1:this.component.m.x, y1:this.component.m.y, x2:ptDst.x, y2:ptDst.y}, {x:this.component.m.x-this.component.w/2, y:this.component.m.y-this.component.h/2, w:this.component.w, h:this.component.h});
 	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
 	return pt;
 }
 
 ImageModuleRenderer.prototype.getDstAnchor = function(ptSrc) {
+	if(!ptSrc) return this.component.m;
 	var pt = intersectLineRect({x1:this.component.m.x, y1:this.component.m.y, x2:ptSrc.x, y2:ptSrc.y}, {x:this.component.m.x-this.component.w/2, y:this.component.m.y-this.component.h/2, w:this.component.w, h:this.component.h});
 	if(isNaN(pt.x) || isNaN(pt.y)) return this.component.m;
-	return pt;
+	pt = ptAdd(ptCast(pt), ptScale(ptNormalize(ptSub(ptCast(pt), [this.component.m.x, this.component.m.y])),7)) // Move slightly outward to fit in arrow end
+	return {x:pt[0],y:pt[1]};
 }

@@ -34,6 +34,7 @@ History.prototype.add = function(command) {
 function CommandDelete(editor, selection) {
 	var selectedLinks = [];
 	selection.forEach(function(m) {
+		if(!m.outs) return;
 		m.outs.forEach(function(l) { if(selectedLinks.indexOf(l)===-1) selectedLinks.push(l);});
 		m.ins.forEach(function(l) { if(selectedLinks.indexOf(l)===-1) selectedLinks.push(l);});
 	});

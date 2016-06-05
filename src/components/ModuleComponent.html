@@ -34,7 +34,9 @@ function ModuleComponent(editor, m) {
 		var value = evt.value;
 		if(key === "x") that.move(m.params.x, m.params.y);
 		else if(key === "y") that.move(m.params.x, m.params.y);
-		editor.notifyModify();
+		else if(key === 'id' || key === 'name') { if(that.text) that._updateText(); }
+		else if(key === 'class' || key === 'type') that.editor.renewModule(m);
+	 	editor.notifyModify();
 	});
 
 
@@ -85,16 +87,19 @@ ModuleComponent.prototype._createComponent = function(m) {
 
 	this.renderer.createElement(c);
 
-	c.append("text")
+	this.text = c.append("text")
 		.classed("module", true)
-		.text(m.class + " " + m.id)
 		.attr('text-anchor',"middle")
 		.attr('y', that.h/2+2)
 		.attr("dominant-baseline", "text-before-edge");
+	this._updateText();
 
 	return c;
 }
 
+ModuleComponent.prototype._updateText = function() {
+	this.text.text(this.m.class + " " + this.m.id);
+}
 
 ModuleComponent.prototype.addPin = function(name, side, pct) {
 	var that = this;
@@ -145,6 +150,7 @@ ModuleComponent.prototype.addPin = function(name, side, pct) {
 		if(y+h/2<h*0.1) side = 'top';
 		if(y+h/2>h*0.9) side = 'bottom';
 		updateTextAnchor(x,y,side);
+		that.move(that.m.params.x, that.m.params.y);
 	}
 
 	var ctm = pin.node().getCTM();

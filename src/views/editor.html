@@ -105,7 +105,7 @@
 	<div id="loading">Loading ...</div>
 	<svg id="svg">
 		<defs>
-			<marker id="end-mark" markerWidth="7" markerHeight="6" orient="auto" refX="7" refY="3">
+			<marker id="end-mark" markerWidth="7" markerHeight="6" orient="auto" refX="4" refY="3">
     			<polygon points="0,0 7,3 0,6"/>    <!-- triangle pointing right -->
   			</marker>
   			<marker id="marker-square" markerWidth="10" markerHeight="10" refx="5" refy="5" orient="auto">
@@ -295,6 +295,10 @@ Polymer({
 		m.component = new ModuleComponent(this, m);
 	},
 
+	hasModule: function(name) {
+		return this.script && this.script.hasModule(name);
+	},
+
 	addLink: function(l) {
 		l.component = new LinkComponent(this, l);
 	},
@@ -305,6 +309,12 @@ Polymer({
 		this.addHistory(new CommandDelete(this, this.selection));
 		this.unselect();
 		this.notifyModify();
+	},
+
+	renewModule: function(m) {
+		console.log(m.component);
+		if(m.component) m.component.remove();
+		this.addModule(m);
 	},
 
 	connect: function(src, dst, srcPin, dstPin) {
