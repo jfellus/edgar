@@ -16,14 +16,16 @@
 	#list { font-size:12px; }
 
 	#list table { width:100%; height:auto; padding:0; margin:0; margin-left:15px;}
-	#list td { padding: 4px 3px; cursor:pointer; }
-	#list td:first-child { width:0px; }
+	#list td { padding: 4px 3px; cursor:pointer; pointer-events: all;}
+	#list td >* { pointer-events: none;}
+	#list td:first-child { width:0px; padding-left:5px;}
 	.category {
 		display:flex; flex-direction: row; align-items: center; align-content: center; justify-content: flex-start;
 		font-size:13px; font-weight:bold; padding-top:4px; cursor: hand;
 	}
 	.category img { margin:5px;}
 	#list tr:hover > td { cursor:hand; background: rgba(0,0,255,0.1);}
+	#list tr:hover > td:first-child { border-top-left-radius:10px;border-bottom-left-radius:10px;}
 	.modules { padding-bottom:15px;}
 
 	input {
@@ -49,7 +51,7 @@
 					<template class='list' is="dom-repeat" items='{{cat.modules}}' filter="filterModules" observe="cat.modules filter">
 						<tr on-tap="onClick">
 							<td width="1%"><img class='icon' src='{{lookupSvg(item.name)}}'></td>
-							<td width='100%' class="name">{{item.name}}<br><span class="lang" width="1%">{{item.lang}}</span></td>
+							<td width='100%'><span class="name">{{item.name}}</span><br><span class="lang" width="1%">{{item.lang}}</span></td>
 						</tr>
 					</template>
 				</table>
@@ -104,7 +106,7 @@ Polymer({
 
 	onClick: function(evt) {
 		var e = $(evt.target);
-		if(!e.hasClass("name")) e = $(e).parents("tr").children(".name");
+		e = $(e).parent("tr").find(".name");
 		Commands.CreateModule({class:e.text()});
 	},
 
@@ -114,7 +116,7 @@ Polymer({
 
 	onFilterChange: function() {
 		this.$.categories.render();
-		$("#ul").find(".list").each(function() { this.render(); });
+		$("#list").find(".list").each(function() { this.render(); });
 	},
 
 	filterCategories: function(item) {
